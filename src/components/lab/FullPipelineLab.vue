@@ -23,7 +23,7 @@
           v-for="(preset, idx) in presets"
           :key="preset.id"
           @click="selectPreset(idx)"
-          :class="selectedPresetIdx === idx
+          :class="selectedPresetIdx === idx && !isCustom
             ? 'bg-gradient-to-r from-cyan-400 to-sky-400 text-slate-950 font-bold shadow-[0_0_15px_rgba(6,182,212,0.4)]'
             : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-700'"
           class="px-3 py-1.5 rounded-xl text-xs font-mono transition cursor-pointer"
@@ -43,7 +43,9 @@
             <span class="w-2 h-2 rounded-full bg-purple-400"></span>
             Código Fuente (Estilo Java / C)
           </label>
-          <span class="text-xs font-mono text-purple-300">{{ currentPreset.category }}</span>
+          <span class="text-xs font-mono" :class="isCustom ? 'text-cyan-300 font-bold' : 'text-purple-300'">
+            {{ isCustom ? '✏️ Código Personalizado' : currentPreset.category }}
+          </span>
         </div>
 
         <div class="relative rounded-2xl border border-slate-700/80 bg-[#080d1a] overflow-hidden shadow-inner focus-within:border-cyan-400 transition">
@@ -54,6 +56,19 @@
             class="w-full bg-transparent p-4 font-mono text-xs sm:text-sm text-cyan-200 leading-relaxed focus:outline-none resize-y selection:bg-cyan-500 selection:text-slate-950"
             placeholder="// Escriba su clase, métodos, condicionales o recursión..."
           ></textarea>
+        </div>
+
+        <!-- Alerta de estado de compilación reactiva -->
+        <div v-if="customCompilation && customCompilation.errors.length > 0" class="p-3 bg-red-950/40 border border-red-500/40 rounded-xl text-red-300 text-xs font-mono flex items-center gap-2">
+          <span>⚠️</span>
+          <span>{{ customCompilation.errors[0] }}</span>
+        </div>
+        <div v-else-if="compileSuccessToast || isCustom" class="p-2.5 bg-cyan-950/40 border border-cyan-500/40 rounded-xl text-cyan-300 text-xs font-mono flex items-center justify-between">
+          <span class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+            <span>Pipeline activo: {{ compiledResult.quadruples.length }} cuartetas, {{ compiledResult.c3dLines.length }} líneas C3D generadas</span>
+          </span>
+          <span class="text-[10px] bg-cyan-900/60 px-2 py-0.5 rounded text-cyan-200">RV32I Sincronizado</span>
         </div>
 
         <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
@@ -131,13 +146,13 @@
                 :key="idx"
                 class="flex items-center gap-3 py-0.5 hover:bg-slate-900/60 px-2 rounded"
               >
-                <span class="text-xs text-slate-500 w-8 select-none font-mono">{{ idx + 1 }}.</span>
-                <span :class="line.endsWith(':') ? 'text-purple-400 font-bold' : line.startsWith('//') ? 'text-slate-500 italic' : 'text-slate-200'">{{ line }}</span>
+                <span class="text-xs text-slate-500 w-8 select-none font-mono text-right">{{ idx + 1 }}.</span>
+                <span v-html="highlightC3DLine(line)" class="font-mono text-xs sm:text-sm"></span>
               </div>
             </div>
           </div>
           <div class="p-3 bg-cyan-950/20 border border-cyan-500/30 rounded-xl text-xs text-slate-300 leading-relaxed">
-            <strong class="text-cyan-300">Regla C3D de Cátedra:</strong> Cada instrucción intermedia descompone operaciones complejas y accesos a objetos en asignaciones con como máximo un operador y dos operandos (<code class="text-cyan-300">dest = op1 op op2</code>).
+            <strong class="text-cyan-300">Regla C3D de Cátedra:</strong> Cada instrucción intermedia descompone operaciones complejas y accesos a objetos en asignaciones con como máximo un operador y dos operandos (<code class="text-cyan-300 font-bold">dest = op1 op op2</code>).
           </div>
         </div>
 
@@ -177,10 +192,19 @@
         <!-- 3. Vista Ensamblador RISC-V RV32I -->
         <div v-if="activeOutputTab === 'riscv'" class="space-y-3">
           <div class="p-4 bg-[#080d1a] rounded-2xl border border-slate-800 font-mono text-xs sm:text-sm overflow-x-auto shadow-inner max-h-[460px] overflow-y-auto">
-            <pre class="text-slate-200 leading-relaxed whitespace-pre font-mono"><code>{{ compiledResult.riscvAssembly }}</code></pre>
+            <div class="space-y-0.5 font-mono text-xs sm:text-sm leading-relaxed">
+              <div
+                v-for="(rLine, rIdx) in compiledResult.riscvAssembly.split('\n')"
+                :key="rIdx"
+                class="flex items-start gap-3 hover:bg-slate-900/60 px-2 py-0.5 rounded"
+              >
+                <span class="text-xs text-slate-500 w-8 select-none text-right shrink-0">{{ rIdx + 1 }}.</span>
+                <span v-html="highlightRiscvLine(rLine)" class="whitespace-pre font-mono flex-1"></span>
+              </div>
+            </div>
           </div>
           <div class="p-3 bg-purple-950/20 border border-purple-500/30 rounded-xl text-xs text-slate-300 leading-relaxed">
-            <strong class="text-purple-300">Convención RISC-V del Ing. Mario Ramírez Tobar:</strong> Las funciones preservan su Frame Pointer en <code class="text-cyan-300">0(fp)</code> o en el prólogo, la dirección de retorno en <code class="text-cyan-300">-4(fp)</code>, y los argumentos en <code class="text-cyan-300">-8(fp)</code> en adelante.
+            <strong class="text-purple-300">Convención RISC-V del Ing. Mario Ramírez Tobar:</strong> Las funciones preservan su Frame Pointer en <code class="text-cyan-300 font-bold">0(fp)</code> o en el prólogo, la dirección de retorno en <code class="text-cyan-300 font-bold">-4(fp)</code>, y los argumentos en <code class="text-cyan-300 font-bold">-8(fp)</code> en adelante.
           </div>
         </div>
 
@@ -198,7 +222,7 @@
               </div>
               <div class="space-y-1.5 font-mono text-xs">
                 <div
-                  v-for="(slot, sIdx) in currentPreset.stackLayout"
+                  v-for="(slot, sIdx) in activeStackLayout"
                   :key="sIdx"
                   class="p-2 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between"
                 >
@@ -219,7 +243,7 @@
               </div>
               <div class="space-y-1.5 font-mono text-xs">
                 <div
-                  v-for="(heapSlot, hIdx) in currentPreset.heapLayout"
+                  v-for="(heapSlot, hIdx) in activeHeapLayout"
                   :key="hIdx"
                   class="p-2 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between"
                 >
@@ -243,6 +267,8 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { compileToC3D } from '../../utils/c3dParser';
+import { highlightC3DLine, highlightRiscvLine } from '../../utils/syntaxHighlight';
 
 interface PresetItem {
   id: string;
@@ -590,12 +616,94 @@ const activeOutputTab = ref<'c3d' | 'cuartetas' | 'riscv' | 'memoria'>('c3d');
 const currentPreset = computed(() => presets[selectedPresetIdx.value]);
 const sourceCode = ref(presets[0].code);
 
+const isCustom = computed(() => sourceCode.value.trim() !== currentPreset.value.code.trim());
+
+// Compilador dinámico para código personalizado escrito por el usuario
+const compileSuccessToast = ref(false);
+
+function compileJavaLikeCode(code: string) {
+  const stackLayout: { offset: string; name: string; reg: string }[] = [];
+  const heapLayout: { addr: string; field: string; value: string }[] = [];
+
+  const classMatch = code.match(/class\s+([a-zA-Z_][a-zA-Z0-9_]*)/);
+  const className = classMatch ? classMatch[1] : '';
+
+  const fieldMatches = [...code.matchAll(/(?:int|boolean)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*;/g)];
+  fieldMatches.forEach((m, idx) => {
+    heapLayout.push({
+      addr: `0x${(0x1000 + idx * 4).toString(16)}`,
+      field: `this.${m[1]} (int32)`,
+      value: '0'
+    });
+  });
+
+  const methodMatch = code.match(/(?:int|void|boolean)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(([^)]*)\)/);
+  const rawParams = methodMatch && methodMatch[2].trim() ? methodMatch[2].split(',').map(p => p.trim().split(/\s+/).pop() || '') : [];
+
+  stackLayout.push({ offset: '0(fp)', name: 'Antiguo Frame Pointer (s0)', reg: 'sw s0, 24(sp)' });
+  stackLayout.push({ offset: '-4(fp)', name: 'Dirección de retorno (ra)', reg: 'sw ra, 28(sp)' });
+  
+  if (className) {
+    stackLayout.push({ offset: '-8(fp)', name: 'Puntero "this" (a0)', reg: 'sw a0, -8(fp)' });
+  }
+
+  rawParams.forEach((param, pIdx) => {
+    const offset = -12 - (pIdx * 4);
+    stackLayout.push({ offset: `${offset}(fp)`, name: `Parámetro '${param}'`, reg: `sw a${pIdx + 1}, ${offset}(fp)` });
+  });
+
+  const res = compileToC3D(code);
+
+  return {
+    c3dLines: res.tacLines,
+    quadruples: res.quadruples,
+    riscvAssembly: res.riscvCode.join('\n'),
+    stackLayout,
+    heapLayout,
+    errors: res.errors
+  };
+}
+
+const customCompilation = computed(() => {
+  if (!isCustom.value) return null;
+  return compileJavaLikeCode(sourceCode.value);
+});
+
 const compiledResult = computed(() => {
+  if (customCompilation.value) {
+    if (customCompilation.value.errors.length === 0) {
+      return {
+        c3dLines: customCompilation.value.c3dLines,
+        quadruples: customCompilation.value.quadruples,
+        riscvAssembly: customCompilation.value.riscvAssembly
+      };
+    } else {
+      return {
+        c3dLines: ['// Error al compilar código fuente personalizado:', `// ${customCompilation.value.errors[0]}`],
+        quadruples: [],
+        riscvAssembly: `# Error de sintaxis en el código:\n# ${customCompilation.value.errors[0]}`
+      };
+    }
+  }
   return {
     c3dLines: currentPreset.value.c3dLines,
     quadruples: currentPreset.value.quadruples,
     riscvAssembly: currentPreset.value.riscvAssembly
   };
+});
+
+const activeStackLayout = computed(() => {
+  if (customCompilation.value && customCompilation.value.stackLayout.length > 0) {
+    return customCompilation.value.stackLayout;
+  }
+  return currentPreset.value.stackLayout;
+});
+
+const activeHeapLayout = computed(() => {
+  if (customCompilation.value && customCompilation.value.heapLayout.length > 0) {
+    return customCompilation.value.heapLayout;
+  }
+  return currentPreset.value.heapLayout;
 });
 
 function selectPreset(idx: number) {
@@ -608,8 +716,10 @@ function resetToCurrentPreset() {
 }
 
 function compileCustom() {
-  // Cuando el usuario modifica el código o compila
   activeOutputTab.value = 'c3d';
+  compileSuccessToast.value = true;
+  setTimeout(() => {
+    compileSuccessToast.value = false;
+  }, 2500);
 }
 </script>
-

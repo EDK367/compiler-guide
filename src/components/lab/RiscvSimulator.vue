@@ -76,8 +76,8 @@
     <!-- Panel de Explicación Didáctica del Paso -->
     <div class="mb-4 p-3.5 bg-slate-900/80 border-l-4 border-cyan-400 rounded-r-xl text-xs leading-relaxed shadow-sm">
       <div class="flex flex-wrap items-center gap-2 mb-1">
-        <span class="font-bold text-cyan-300 font-mono text-sm">{{ currentStep.instruction }}</span>
-        <span class="text-purple-400 font-mono"># {{ currentStep.comment }}</span>
+        <span v-html="highlightRiscvLine(currentStep.instruction)" class="font-bold font-mono text-sm"></span>
+        <span class="text-slate-400 italic font-mono"># {{ currentStep.comment }}</span>
       </div>
       <p class="text-slate-300">{{ currentStep.explanation }}</p>
     </div>
@@ -101,12 +101,12 @@
               currentStepIdx === idx
                 ? 'bg-cyan-950/50 border-l-4 border-cyan-400 text-white font-bold pl-2.5 shadow-[0_0_15px_rgba(6,182,212,0.15)]'
                 : 'text-slate-400 hover:bg-slate-900/40 pl-3',
-              'py-1 rounded-r-lg transition flex items-center gap-2 sm:gap-3 text-xs'
+              'py-1 rounded-r-lg transition flex items-center gap-2 sm:gap-3 text-xs font-mono'
             ]"
           >
             <span class="text-[10px] text-slate-500 w-10 shrink-0 font-mono">{{ st.pc }}</span>
-            <span class="text-slate-200 flex-1 truncate font-mono">{{ st.instruction }}</span>
-            <span class="text-[11px] text-purple-400/90 truncate max-w-[140px] hidden sm:inline"># {{ st.comment }}</span>
+            <span v-html="highlightRiscvLine(st.instruction)" class="flex-1 truncate font-mono"></span>
+            <span class="text-[11px] text-slate-400 italic truncate max-w-[140px] hidden sm:inline"># {{ st.comment }}</span>
           </div>
         </div>
       </div>
@@ -229,6 +229,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { RISCV_PROGRAMS, type RiscvExampleProgram } from '../../data/riscvExamples';
+import { highlightRiscvLine } from '../../utils/syntaxHighlight';
 
 const programs = ref<RiscvExampleProgram[]>(RISCV_PROGRAMS);
 const selectedProgIdx = ref(0);

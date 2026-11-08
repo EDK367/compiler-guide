@@ -1,4 +1,6 @@
 ---
+import { highlightCode } from '../utils/syntaxHighlight';
+
 interface Props {
   code: string;
   lang?: string;
@@ -6,6 +8,7 @@ interface Props {
 }
 
 const { code, lang = 'c', title } = Astro.props;
+const highlightedCode = highlightCode(code.trim(), lang);
 ---
 
 <div class="my-5 rounded-2xl border border-slate-800 bg-[#080d1a] overflow-hidden shadow-xl font-mono text-sm">
@@ -22,7 +25,7 @@ const { code, lang = 'c', title } = Astro.props;
   )}
 
   <div class="relative group">
-    <pre class="p-4 sm:p-5 overflow-x-auto text-slate-200 leading-relaxed select-text font-mono text-xs sm:text-sm"><code>{code.trim()}</code></pre>
+    <pre class="p-4 sm:p-5 overflow-x-auto text-slate-200 leading-relaxed select-text font-mono text-xs sm:text-sm"><code set:html={highlightedCode} /></pre>
     
     <button
       type="button"

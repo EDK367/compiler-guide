@@ -1,6 +1,6 @@
 {
   "name": "compiler-guide",
-  "version": "1.0.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "astro dev --host",
