@@ -4,24 +4,24 @@ import FormulasViewer from '../components/FormulasViewer.vue';
 ---
 
 <MainLayout
-  title="Formulario de Compiladores: Reglas, Ecuaciones y Procedimientos"
-  description="Compendio exhaustivo de fórmulas matemáticas, algoritmos de análisis sintáctico, reglas FIRST/FOLLOW, aplanamiento de arreglos y codificación de instrucciones RISC-V."
+  title="Formulario Matemático & Palabras Reservadas RISC-V • Compiladores"
+  description="Compendio exhaustivo de fórmulas matemáticas (KaTeX), algoritmos de análisis sintáctico, reglas FIRST/FOLLOW, aplanamiento de arreglos y ficha técnica de palabras reservadas RISC-V (RV32I)."
 >
   <div class="space-y-8">
     <div class="border-b border-slate-800 pb-6">
       <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-mono font-bold bg-cyan-950/60 text-cyan-300 border border-cyan-500/30 mb-3 shadow-[0_0_12px_rgba(6,182,212,0.25)]">
-        <span>📐</span>
-        <span>FORMULARIO MATEMÁTICO & ALGORÍTMICO</span>
+        <span>📐 ⚡</span>
+        <span>FORMULARIO MATEMÁTICO & PALABRAS RESERVADAS RISC-V</span>
       </div>
       <h1 class="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
-        Formulario de Compiladores
+        Formulario & Ficha Técnica RISC-V
       </h1>
-      <p class="text-xs sm:text-base text-slate-300 mt-2 leading-relaxed font-sans">
-        Este módulo reúne todas las definiciones matemáticas formales, procedimientos algorítmicos, fórmulas de aplanado de arreglos multidimensionales, cálculo de conjuntos predictivos y formatos de instrucción RISC-V. Cada regla incluye su definición formal en <span class="text-cyan-300 font-mono font-bold">KaTeX</span>, desglose de símbolos, procedimiento paso a paso, ejemplo resuelto, errores frecuentes y ejercicio propuesto con solución explicada.
+      <p class="text-xs sm:text-base text-slate-300 mt-2 leading-relaxed font-sans max-w-5xl">
+        Esta sección reúne en un solo lugar de consulta rápida: <strong class="text-white">1) Las Fórmulas Matemáticas y Algoritmos</strong> (definición formal en <span class="text-cyan-300 font-mono font-bold">KaTeX</span>, desglose de símbolos, cálculo de conjuntos predictivos FIRST/FOLLOW, aplanamiento de matrices 2D/3D y resolución de conflictos) y <strong class="text-white">2) La Ficha Técnica de Palabras Reservadas RISC-V RV32I</strong> (71 términos que abarcan opcodes hardware, pseudoinstrucciones, los 32 registros de la ABI, directivas del ensamblador, llamadas al sistema <code class="text-cyan-300">ecall</code> y los 6 formatos de instrucción de 32 bits).
       </p>
     </div>
 
-    <!-- Visor Interactivo de Fórmulas -->
+    <!-- Visor Interactivo de Fórmulas y Palabras Reservadas -->
     <FormulasViewer client:load />
   </div>
 </MainLayout>
