@@ -1,0 +1,21 @@
+{
+  "name": "compiler-guide",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev --host",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@astrojs/vue": "^7.1.2",
+    "astro": "^7.4.7",
+    "katex": "^0.19.1",
+    "lucide-vue-next": "^1.0.0",
+    "vue": "^3.5.45"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.5",
+    "tailwindcss": "^4.3.5"
+  }
+}

@@ -1,0 +1,403 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+import CodeBlock from '../../components/CodeBlock.astro';
+import TacGenerator from '../../components/lab/TacGenerator.vue';
+---
+
+<MainLayout
+  title="Módulo 5: Traducción y Código Intermedio"
+  description="Código de 3 Direcciones (C3D), Cuartetos, Tripletas, aplanado de arreglos 2D/3D, booleanos con cortocircuito, subprogramas y I/O."
+  currentSlug="5-codigo-intermedio"
+>
+  <div class="space-y-12">
+    <!-- Cabecera del Módulo -->
+    <div class="border-b border-slate-800 pb-6">
+      <div class="flex items-center gap-2 mb-2 font-mono text-xs">
+        <span class="px-2.5 py-0.5 rounded bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold">MÓDULO 5</span>
+        <span class="text-slate-400">Middle-End • Representación Intermedia</span>
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+        Traducción y Código Intermedio: C3D, Cuádruplas y Aplanamiento
+      </h1>
+      <p class="text-base sm:text-lg text-slate-300 mt-2 leading-relaxed">
+        El Código de Tres Direcciones (C3D) es el puente universal entre la semántica abstracta y el hardware físico. Estudio riguroso de las instrucciones permitidas, aplanado de arreglos multidimensionales, evaluación de cortocircuito booleano y subprogramas.
+      </p>
+
+      <div class="mt-4 p-3 bg-[#080d1a] rounded-lg border border-slate-800 text-xs font-mono text-slate-300 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <span class="text-cyan-400 font-bold">Respaldo Bibliográfico:</span>
+          <span>Ing. Mario Ramírez Tobar • "Generación de código Intermedio" (pág. 1-733).</span>
+        </div>
+        <a href="/bibliografia#ref-c3d-pdf" class="text-purple-400 hover:underline">Ver referencias ↗</a>
+      </div>
+    </div>
+
+    <!-- 1. Principio Fundamental del C3D -->
+    <section id="que-es-c3d" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">1.</span> Principio Fundamental del Código de Tres Direcciones
+      </h2>
+
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
+        En las páginas 134 a 150 del material oficial, el Ing. Mario Ramírez Tobar formula el postulado base del C3D:
+      </p>
+
+      <blockquote class="p-4 bg-[#080d1a] border-l-4 border-purple-500/40 text-xs font-mono text-white italic leading-relaxed my-3 rounded-r-lg">
+        "El código 3 direcciones propone que una instrucción <strong>no puede acceder a más de 3 direcciones en memoria al mismo tiempo</strong>. En tiempo de ejecución solo accedemos a posiciones en memoria."
+      </blockquote>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4 text-xs font-sans">
+        <div class="p-4 bg-rose-950/30 border border-rose-500/40 rounded-xl space-y-2">
+          <strong class="text-rose-400 font-mono block">❌ Lo que NO se permite en C3D:</strong>
+          <code class="p-2 bg-[#080d1a] block font-mono text-rose-300 rounded">a = 3 + a + val + 25 / 2;</code>
+          <p class="text-slate-400">
+            Esta sentencia es ilegal en C3D porque intenta acceder a <strong>6 posiciones en memoria</strong> dentro de una sola instrucción.
+          </p>
+        </div>
+
+        <div class="p-4 bg-emerald-950/30 border border-emerald-500/40 rounded-xl space-y-2">
+          <strong class="text-emerald-400 font-mono block">✅ Descomposición Canónica con Temporales:</strong>
+          <div class="p-2 bg-[#080d1a] font-mono text-emerald-300 rounded space-y-0.5 text-xs">
+            <p>t1 = 3 + a</p>
+            <p>t2 = t1 + val</p>
+            <p>t3 = 25 / 2</p>
+            <p>t4 = t2 + t3</p>
+            <p>a = t4</p>
+          </div>
+          <p class="text-slate-400">
+            Cada paso involucra como máximo dos operandos fuente y un operando destino.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Instrucciones Canónicas Permitidas en C3D -->
+    <section id="instrucciones-permitidas" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">2.</span> Conjunto Canónico de Instrucciones C3D
+      </h2>
+
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
+        Según la especificación del curso (páginas 151 a 181), el repertorio de instrucciones válidas en C3D está compuesto exclusivamente por:
+      </p>
+
+      <div class="overflow-x-auto my-4 border border-slate-800 rounded-xl bg-[#080d1a]">
+        <table class="w-full text-left text-xs font-mono min-w-[520px]">
+          <thead class="bg-slate-900 text-white">
+            <tr>
+              <th class="p-2.5 border-b border-slate-800">Patrón de Instrucción</th>
+              <th class="p-2.5 border-b border-slate-800">Operación Semántica</th>
+              <th class="p-2.5 border-b border-slate-800">Ejemplo</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/60 text-slate-400">
+            <tr>
+              <td class="p-2.5 text-cyan-400 font-bold">dest = op1 op op2</td>
+              <td class="p-2.5">Operación binaria (aritmética, relacional, lógica)</td>
+              <td class="p-2.5 text-white">t1 = a * 50</td>
+            </tr>
+            <tr>
+              <td class="p-2.5 text-cyan-400 font-bold">dest = val</td>
+              <td class="p-2.5">Asignación simple de constante o variable</td>
+              <td class="p-2.5 text-white">c = 25 ; a = b</td>
+            </tr>
+            <tr>
+              <td class="p-2.5 text-cyan-400 font-bold">dest = op op1</td>
+              <td class="p-2.5">Operación unaria (negación aritmética o lógica)</td>
+              <td class="p-2.5 text-white">t1 = -x ; c = !algo</td>
+            </tr>
+            <tr>
+              <td class="p-2.5 text-amber-300 font-bold">etq:</td>
+              <td class="p-2.5">Definición de punto de destino o etiqueta</td>
+              <td class="p-2.5 text-white">et1:</td>
+            </tr>
+            <tr>
+              <td class="p-2.5 text-amber-300 font-bold">goto etq</td>
+              <td class="p-2.5">Salto incondicional absoluto</td>
+              <td class="p-2.5 text-white">goto et2</td>
+            </tr>
+            <tr>
+              <td class="p-2.5 text-purple-400 font-bold">if op1 oprel op2 goto etq</td>
+              <td class="p-2.5">Salto condicional relacional</td>
+              <td class="p-2.5 text-white">if x > z goto et1</td>
+            </tr>
+            <tr>
+              <td class="p-2.5 text-purple-400 font-bold">ifFalse x goto etq</td>
+              <td class="p-2.5">Salto condicional por falsedad</td>
+              <td class="p-2.5 text-white">ifFalse b goto et4</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 3. Cuádruplas / Cuartetos y Tripletas -->
+    <section id="cuadruplas-tripletas" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">3.</span> Cuádruplas / Cuartetos y Tripletas
+      </h2>
+
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
+        Tal como señala el PDF (páginas 711 a 731), el compilador requiere estructuras en memoria que representen el C3D para facilitar su análisis y optimización:
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4 text-xs font-sans">
+        <div class="p-4 bg-[#0d1527] rounded-xl border border-slate-800">
+          <h3 class="font-bold text-purple-400 font-mono mb-2">Cuartetos / Cuádruplas</h3>
+          <p class="text-slate-400 leading-relaxed mb-2">
+            Estructura de 4 campos: <code class="text-white">(operador, operando1, operando2, destino)</code>.
+          </p>
+          <p class="text-slate-400 leading-relaxed">
+            Ventaja: Los temporales tienen nombres explícitos, lo cual permite al optimizador mover o reordenar instrucciones sin romper las referencias relativas de otras sentencias.
+          </p>
+        </div>
+
+        <div class="p-4 bg-[#0d1527] rounded-xl border border-slate-800">
+          <h3 class="font-bold text-cyan-400 font-mono mb-2">Tripletas</h3>
+          <p class="text-slate-400 leading-relaxed mb-2">
+            Estructura de 3 campos: <code class="text-white">(operador, operando1, operando2)</code>.
+          </p>
+          <p class="text-slate-400 leading-relaxed">
+            Ventaja: Ahorra espacio de memoria al no almacenar nombres temporales explícitos. Los resultados intermedios se referencian mediante el número de índice de la tripleta generadora (ej. <code class="text-white">(0)</code>, <code class="text-white">(1)</code>).
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Aplanamiento de Arreglos Multidimensionales -->
+    <section id="aplanado-arreglos" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">4.</span> Arreglos Multidimensionales: Fórmulas de Aplanamiento
+      </h2>
+
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
+        En las páginas 330 a 375 de la obra oficial de cátedra se estipula una regla axial:
+      </p>
+
+      <blockquote class="p-4 bg-[#080d1a] border-l-4 border-amber-400 text-xs font-mono text-white italic leading-relaxed my-3 rounded-r-lg">
+        "¿Multidimensional? <strong>No existe.</strong> Los arreglos de múltiples dimensiones no existen en código intermedio ni en hardware. En código intermedio deben 'aplanarse' las dimensiones en una sola."
+      </blockquote>
+
+      <div class="space-y-4 my-4 font-sans text-xs">
+        <!-- 2D -->
+        <div class="p-4 bg-[#0d1527] rounded-xl border border-slate-800 space-y-2">
+          <h3 class="font-bold text-cyan-400 font-mono text-sm">Aplanamiento Bidimensional (2D) - Fila Mayor</h3>
+          <p class="text-slate-300">
+            Dado un arreglo declarado como <code class="text-white">int a[D1][D2]</code>, la posición lineal para acceder al elemento <code class="text-white">a[i][j]</code> es:
+          </p>
+          <div class="p-3 bg-[#080d1a] rounded font-mono text-sm text-center text-emerald-300">
+            Posición = (i * D2) + j
+          </div>
+          <p class="text-slate-400">
+            <strong>Ejemplo del PDF:</strong> Para <code class="text-white">int a[2][4]</code>, el acceso a <code class="text-white">a[1][3]</code> tiene como nueva posición: $1 \times 4 + 3 = 7$.
+          </p>
+          <CodeBlock
+            title="Traducción a C3D de a[1][3] = 25"
+            lang="c"
+            code={`t1 = 1 * 4
+t2 = t1 + 3
+a[t2] = 25`}
+          />
+        </div>
+
+        <!-- 3D -->
+        <div class="p-4 bg-[#0d1527] rounded-xl border border-slate-800 space-y-2">
+          <h3 class="font-bold text-purple-400 font-mono text-sm">Aplanamiento Tridimensional (3D)</h3>
+          <p class="text-slate-300">
+            Dado un arreglo declarado como <code class="text-white">int a[D1][D2][D3]</code>, la posición para acceder a <code class="text-white">a[i][j][k]</code> es:
+          </p>
+          <div class="p-3 bg-[#080d1a] rounded font-mono text-sm text-center text-emerald-300">
+            Posición = (i * D2 * D3) + (j * D3) + k
+          </div>
+          <p class="text-slate-400">
+            Multiplicamos el primer índice por el volumen de una capa ($D_2 \times D_3$), el segundo índice por el ancho de una fila ($D_3$), y sumamos el índice de la columna ($k$).
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Expresiones Booleanas con Cortocircuito -->
+    <section id="booleanos-cortocircuito" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">5.</span> Expresiones Booleanas y Evaluación de Cortocircuito
+      </h2>
+
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
+        En las páginas 469 a 501, el autor establece la jerarquía y mecánica de traducción:
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 my-4 font-mono text-xs">
+        <div class="p-3 bg-[#0d1527] rounded-lg border border-slate-800">
+          <strong class="text-purple-400 block mb-1">1. NOT (!)</strong>
+          <span class="text-slate-400">Mayor jerarquía. Se aplica de inmediato a su operando adyacente.</span>
+        </div>
+        <div class="p-3 bg-[#0d1527] rounded-lg border border-slate-800">
+          <strong class="text-cyan-400 block mb-1">2. AND (&&)</strong>
+          <span class="text-slate-400">Jerarquía intermedia. Actúa como multiplicación lógica (conjunción).</span>
+        </div>
+        <div class="p-3 bg-[#0d1527] rounded-lg border border-slate-800">
+          <strong class="text-amber-300 block mb-1">3. OR (||)</strong>
+          <span class="text-slate-400">Menor jerarquía. Actúa como suma lógica (disyunción).</span>
+        </div>
+      </div>
+
+      <div class="p-4 bg-[#080d1a] rounded-xl border border-slate-800 space-y-3 text-xs font-sans">
+        <h3 class="font-bold text-white font-mono">Reglas Semánticas con Etiquetas B.verdadero y B.falso:</h3>
+        <ul class="space-y-2 text-slate-300 list-disc list-inside">
+          <li>
+            <strong>Efecto del NOT (!X):</strong> Intercambia las etiquetas pasadas a su hijo: $X.verdadero = B.falso$ y $X.falso = B.verdadero$. ¡No genera ninguna instrucción C3D por sí mismo!
+          </li>
+          <li>
+            <strong>Efecto del AND (X && Y):</strong> Si $X$ es verdadero, debe continuar evaluando $Y$. Por tanto, se asigna una nueva etiqueta de paso (<code class="text-cyan-400">etiqueta_siguiente</code>) para su salida verdadera, y el mismo falso del padre. Al hijo $Y$ se le pasan las etiquetas originales del padre.
+          </li>
+          <li>
+            <strong>Efecto del OR (X || Y):</strong> Si $X$ es verdadero, toda la expresión lo es (cortocircuito). Por tanto, se asigna el verdadero del padre a $X$, y una nueva etiqueta (<code class="text-cyan-400">etiqueta_siguiente</code>) para su salida falsa (para evaluar $Y$ solo si $X$ falla).
+          </li>
+        </ul>
+
+        <CodeBlock
+          title="Ejemplo del PDF: boolean x = 25 > 0 OR 30 == id1;"
+          lang="c"
+          code={`  if 25 > 0 goto et1
+  goto et2
+et1:
+  x = 1
+  goto etSalida
+et2:
+  if 30 == id1 goto et1
+  goto et3
+et3:
+  x = 0
+etSalida:`}
+        />
+      </div>
+    </section>
+
+    <!-- 6. Control de Flujo en C3D -->
+    <section id="control-flujo-c3d" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">6.</span> Traducción de Estructuras de Control de Flujo
+      </h2>
+
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
+        El código máquina no dispone de llaves <code class="text-white">&#123;&#125;</code> ni palabras estructuradas. Toda bifurcación se reduce a comparaciones condicionales y saltos incondicionales.
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4 font-mono text-xs">
+        <div class="p-4 bg-[#0d1527] rounded-xl border border-slate-800 space-y-2">
+          <strong class="text-cyan-400 block">Bucle while (Condición al Inicio)</strong>
+          <CodeBlock
+            lang="c"
+            code={`L_cond:
+  if contador < limite goto L_body
+  goto L_end
+L_body:
+  t1 = total + contador
+  total = t1
+  t2 = contador + 1
+  contador = t2
+  goto L_cond
+L_end:`}
+          />
+        </div>
+
+        <div class="p-4 bg-[#0d1527] rounded-xl border border-slate-800 space-y-2">
+          <strong class="text-amber-300 block">Bucle for (Init, Condición, Cuerpo, Paso)</strong>
+          <CodeBlock
+            lang="c"
+            code={`  i = 0
+et1:
+  if i < 10 goto et2
+  goto et3
+et2:
+  // cuerpo
+  t1 = a + 1
+  a = t1
+  // paso incremental
+  t2 = i * 2
+  i = t2
+  goto et1
+et3:`}
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. Subprogramas, I/O y Constantes -->
+    <section id="funciones-io-constantes" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">7.</span> Subprogramas, Llamadas Anidadas, I/O en Consola y Constantes
+      </h2>
+
+      <div class="space-y-4 font-sans text-sm sm:text-base text-slate-300 leading-relaxed">
+        <p>
+          En llamadas a subprogramas (páginas 624 a 655), cada argumento se evalúa previamente en temporales y se emite la secuencia <code class="text-cyan-400">param arg_i</code> seguida de <code class="text-purple-400">call func_name N</code>:
+        </p>
+
+        <CodeBlock
+          title="Ejemplo del PDF: a = b * unaFuncion(otraFuncion(x + 1, b), z * 25 / 2, 5);"
+          lang="c"
+          code={`// 1. Evaluar y llamar a la función interna
+t1 = x + 1
+param t1
+param b
+t2 = call otraFuncion 2
+
+// 2. Evaluar segundo y tercer argumento de la función externa
+t3 = z * 25
+t4 = t3 / 2
+t5 = 5
+
+// 3. Preparar parámetros de unaFuncion
+param t2
+param t4
+param t5
+t6 = call unaFuncion 3
+
+// 4. Operación final
+t7 = b * t6
+a = t7`}
+        />
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div class="p-3.5 bg-[#0d1527] rounded-xl border border-slate-800 space-y-1.5">
+            <h4 class="font-bold text-white font-mono">Consola I/O (pág. 656-686):</h4>
+            <p class="text-slate-400">
+              La concatenación y visualización se traduce en instrucciones explícitas:
+              <br /><code class="text-cyan-400">t1 = concat "Hola " id1</code>
+              <br /><code class="text-cyan-400">print t1</code>
+              <br />Y lecturas: <code class="text-cyan-400">SCAN_INT id</code>, <code class="text-cyan-400">SCAN_FLOAT id</code>.
+            </p>
+          </div>
+
+          <div class="p-3.5 bg-[#0d1527] rounded-xl border border-slate-800 space-y-1.5">
+            <h4 class="font-bold text-white font-mono">Constantes (pág. 687-710):</h4>
+            <p class="text-slate-400">
+              Las constantes se evalúan al cargar la memoria o en compilación. <strong>No pueden depender de variables de ejecución</strong>, únicamente de literales y otras constantes ya resueltas.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Laboratorio embebido -->
+    <div class="my-8">
+      <div class="mb-3">
+        <span class="text-xs font-mono font-bold text-purple-400 uppercase">Laboratorio Práctico</span>
+        <h3 class="text-lg font-bold text-white">Generador Interactivo de C3D y Cuádruplas</h3>
+      </div>
+      <TacGenerator client:visible />
+    </div>
+
+    <!-- Navegación entre módulos -->
+    <div class="pt-8 border-t border-slate-800 flex items-center justify-between font-mono text-xs">
+      <a href="/modulo/4-analisis-semantico" class="px-4 py-2 rounded-lg bg-[#0d1527] hover:bg-slate-900 text-slate-400 hover:text-white transition">
+        ◀ Anterior: Módulo 4 (Semántico)
+      </a>
+      <a href="/modulo/6-optimizacion" class="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-600 hover:bg-gradient-to-r from-purple-500 to-indigo-600/80 text-white font-bold transition flex items-center gap-2">
+        <span>Siguiente: Módulo 6 (Optimización)</span>
+        <span>▶</span>
+      </a>
+    </div>
+  </div>
+</MainLayout>

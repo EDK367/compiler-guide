@@ -1,0 +1,96 @@
+@import "tailwindcss";
+@import "katex/dist/katex.min.css";
+
+:root {
+  /* Fondo general modo oscuro profundo */
+  --bg-body: #070a13;
+  --bg-card: #0d1527;
+  --bg-card-hover: #131f38;
+  --bg-inner: #090e1c;
+  --bg-header: rgba(7, 10, 19, 0.92);
+
+  /* Tríada de acentos solicitada: Cyan, Morado y Azulito */
+  --accent-cyan: #06b6d4;
+  --accent-cyan-light: #22d3ee;
+  --accent-purple: #a855f7;
+  --accent-purple-light: #c084fc;
+  --accent-blue: #38bdf8;
+  --accent-blue-electric: #3b82f6;
+
+  /* Bordes sutiles con tono azul/cyan/morado */
+  --border-dark: #1e293b;
+  --border-cyan-glow: rgba(34, 211, 238, 0.25);
+  --border-purple-glow: rgba(168, 85, 247, 0.25);
+  --border-blue-glow: rgba(56, 189, 248, 0.25);
+
+  /* Tipografía */
+  --text-bright: #f8fafc;
+  --text-main: #e2e8f0;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+}
+
+body {
+  background-color: #070a13;
+  color: #e2e8f0;
+  font-family: 'Overpass', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow-x: hidden;
+}
+
+code, pre, kbd {
+  font-family: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Soporte KaTeX en Dark Mode y Responsive Scroll */
+.katex {
+  color: #f1f5f9;
+}
+
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.75rem 0.5rem;
+  margin: 0.5rem 0;
+  max-width: 100%;
+}
+
+.katex-display::-webkit-scrollbar {
+  height: 4px;
+}
+
+.katex-display::-webkit-scrollbar-thumb {
+  background: rgba(34, 211, 238, 0.3);
+  border-radius: 9999px;
+}
+
+/* Scrollbars personalizados estilo Cyberpunk/Sci-Fi elegante */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #070a13;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #06b6d4;
+}
+
+/* Efecto de brillo de bordes */
+.glow-cyan {
+  box-shadow: 0 0 20px -5px rgba(6, 182, 212, 0.35);
+}
+
+.glow-purple {
+  box-shadow: 0 0 20px -5px rgba(168, 85, 247, 0.35);
+}
+
+.glow-blue {
+  box-shadow: 0 0 20px -5px rgba(56, 189, 248, 0.35);
+}

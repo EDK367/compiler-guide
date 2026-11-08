@@ -1,0 +1,18 @@
+{
+	"pid": 34766,
+	"port": 4322,
+	"url": "http://localhost:4322",
+	"urls": {
+		"local": [
+			"http://localhost:4322/"
+		],
+		"network": [
+			"http://192.168.1.45:4322/"
+		],
+		"networkInterfaceNames": [
+			"wlan0"
+		]
+	},
+	"background": true,
+	"startedAt": "2026-11-08T00:17:36.445Z"
+}

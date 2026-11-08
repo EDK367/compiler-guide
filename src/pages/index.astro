@@ -1,0 +1,139 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import { MODULES } from '../data/modulesMeta';
+import FullPipelineLab from '../components/lab/FullPipelineLab.vue';
+---
+
+<MainLayout
+  title="Guía Integral y Laboratorio de Compiladores"
+  description="Plataforma académica interactiva de teoría de compiladores, análisis léxico, sintáctico, semántico, código de tres direcciones (C3D) y arquitectura RISC-V."
+>
+  <div class="space-y-16 sm:space-y-20">
+    <!-- Hero Section / Bienvenida Académica -->
+    <section class="p-6 sm:p-10 lg:p-12 rounded-3xl bg-gradient-to-br from-[#0d1527] via-[#090e1c] to-[#140e2b] border border-cyan-500/30 shadow-[0_0_60px_rgba(6,182,212,0.14)] relative overflow-hidden">
+      <div class="absolute -right-10 -bottom-10 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -left-10 -top-10 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="max-w-4xl space-y-6 relative z-10">
+        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono font-bold bg-cyan-950/60 text-cyan-300 border border-cyan-500/30 shadow-[0_0_12px_rgba(6,182,212,0.25)]">
+          <span>🎓</span>
+          <span>TEXTO ACADÉMICO & LABORATORIO EXPERIMENTAL EN VIVO</span>
+        </div>
+
+        <h1 class="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-white tracking-tight leading-tight">
+          Guía Completa de Compiladores: <br />
+          <span class="bg-gradient-to-r from-cyan-300 via-sky-300 to-purple-400 bg-clip-text text-transparent">
+            Del Código Fuente al Silicio RISC-V
+          </span>
+        </h1>
+
+        <p class="text-base sm:text-lg text-slate-300 leading-relaxed font-sans">
+          Una plataforma digital rigurosa y visual diseñada para estudiantes de ingeniería y ciencias de la computación. Aprenda desde autómatas y gramáticas formales hasta comprobación estática de tipos, generación de código de tres direcciones (C3D), cuartetas, programación orientada a objetos en el Heap y la convención de marco de pila con Frame Pointer en procesadores <strong class="text-cyan-300 font-bold">RISC-V (RV32I)</strong>.
+        </p>
+
+        <!-- Botones de Acción -->
+        <div class="flex flex-wrap items-center gap-3.5 pt-2 text-sm font-mono">
+          <a
+            href="/modulo/1-fundamentos"
+            class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-cyan-400 to-sky-400 hover:from-cyan-300 hover:to-sky-300 text-slate-950 font-bold shadow-[0_0_24px_rgba(6,182,212,0.45)] transition duration-200 flex items-center gap-2 text-sm"
+          >
+            <span>Comenzar con el Módulo 1</span>
+            <span>➔</span>
+          </a>
+          <a
+            href="/laboratorio"
+            class="px-6 py-3.5 rounded-xl bg-purple-950/50 hover:bg-purple-900/60 text-purple-200 font-bold border border-purple-500/40 shadow-[0_0_18px_rgba(168,85,247,0.25)] transition duration-200 flex items-center gap-2 text-sm"
+          >
+            <span>⚡ Explorar Laboratorio (POO & Recursión)</span>
+          </a>
+          <a
+            href="/formulario"
+            class="px-6 py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-sky-300 font-bold border border-slate-700 transition duration-200 flex items-center gap-2 text-sm"
+          >
+            <span>📐 Formulario KaTeX</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Respaldo Bibliográfico Destacado -->
+    <section class="p-6 sm:p-7 rounded-2xl bg-[#0d1527] border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-5 text-sm font-mono shadow-lg">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-cyan-950/60 border border-cyan-500/30 flex items-center justify-center text-2xl shrink-0 text-cyan-300 shadow-[0_0_12px_rgba(6,182,212,0.25)]">
+          📚
+        </div>
+        <div>
+          <span class="text-cyan-300 font-bold block text-base font-sans">Base Académica Obligatoria & Fuentes Oficiales</span>
+          <p class="text-slate-400 font-sans text-sm mt-0.5 leading-relaxed">
+            Material de cátedra del <strong class="text-white">Ing. Mario Ramírez Tobar</strong> (Organización de Lenguajes y Compiladores 2): PDFs de Código Intermedio, Traducción Dirigida por Sintaxis y diapositivas oficiales de RISC-V.
+          </p>
+        </div>
+      </div>
+      <a
+        href="/bibliografia"
+        class="shrink-0 w-full sm:w-auto text-center px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500/40 text-slate-200 hover:text-cyan-300 transition text-xs font-mono font-bold"
+      >
+        Ver referencias completas ↗
+      </a>
+    </section>
+
+    <!-- Demostración del Laboratorio en el Portal: Compilador Java -> C3D -> RISC-V -->
+    <section class="space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
+        <div>
+          <span class="text-xs font-mono uppercase tracking-wider text-cyan-400 font-bold">Laboratorio Integrado en Vivo</span>
+          <h2 class="text-2xl sm:text-3xl font-bold text-white font-sans mt-0.5">Compilador Java ➔ C3D ➔ Cuartetas ➔ RISC-V</h2>
+          <p class="text-sm text-slate-400 mt-1">Pruebe ejemplos reales de clases, puntero <code class="text-cyan-300 font-bold">this</code> en el Heap, funciones recursivas y generación de ensamblador RV32I.</p>
+        </div>
+        <a href="/laboratorio" class="text-sm font-mono text-cyan-400 hover:text-cyan-300 hover:underline flex items-center gap-1 font-bold">
+          <span>Abrir laboratorio completo</span>
+          <span>➔</span>
+        </a>
+      </div>
+
+      <FullPipelineLab client:visible />
+    </section>
+
+    <!-- Malla de los 8 Módulos Académicos -->
+    <section class="space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-4">
+        <div>
+          <span class="text-xs font-mono uppercase tracking-wider text-purple-400 font-bold">Malla de Aprendizaje</span>
+          <h2 class="text-2xl sm:text-3xl font-bold text-white font-sans mt-0.5">Los 8 Módulos de la Guía</h2>
+        </div>
+        <span class="text-xs font-mono text-slate-400">Currículo estructurado paso a paso</span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        {MODULES.map((m) => (
+          <a
+            href={`/modulo/${m.slug}`}
+            class="p-6 rounded-2xl bg-[#0d1527] border border-slate-800 hover:border-cyan-500/50 hover:bg-[#111a33] hover:shadow-[0_0_25px_rgba(6,182,212,0.15)] transition duration-200 group flex flex-col justify-between"
+          >
+            <div>
+              <div class="flex items-center justify-between gap-2 mb-2.5 font-mono text-xs">
+                <span class="px-2.5 py-0.5 rounded-md bg-slate-900 text-cyan-300 border border-cyan-500/30 font-bold">
+                  Módulo {m.number}
+                </span>
+                <span class="text-xs text-purple-400 font-bold uppercase tracking-wider">
+                  {m.badge}
+                </span>
+              </div>
+              <h3 class="text-lg font-bold text-white group-hover:text-cyan-300 transition mb-2 font-sans">
+                {m.title}
+              </h3>
+              <p class="text-sm text-slate-400 line-clamp-2 leading-relaxed font-sans mb-4">
+                {m.description}
+              </p>
+            </div>
+
+            <div class="pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs font-mono text-cyan-400">
+              <span class="text-slate-400">{m.topics.length} temas desarrollados</span>
+              <span class="group-hover:translate-x-1.5 transition font-bold">Leer módulo ➔</span>
+            </div>
+          </a>
+        ))}
+      </div>
+    </section>
+  </div>
+</MainLayout>

@@ -1,0 +1,530 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+import CodeBlock from '../../components/CodeBlock.astro';
+---
+
+<MainLayout
+  title="Módulo 4: Análisis Semántico"
+  description="¿Tiene mi lenguaje sentido? Comprobaciones estáticas (tipos, nombres, ámbitos, flujo, unicidad, accesos), Tabla de Tipos y Tabla de Símbolos."
+  currentSlug="4-analisis-semantico"
+>
+  <div class="space-y-12">
+    <!-- Cabecera del Módulo -->
+    <div class="border-b border-slate-800 pb-6">
+      <div class="flex items-center gap-2 mb-2 font-mono text-xs">
+        <span class="px-2.5 py-0.5 rounded bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold">MÓDULO 4</span>
+        <span class="text-slate-400">Front-End • Fase de Consistencia Lógica</span>
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+        Análisis Semántico: Sistemas de Tipos y Tablas del Compilador
+      </h1>
+      <p class="text-base sm:text-lg text-slate-300 mt-2 leading-relaxed">
+        El análisis semántico es el juez que dictamina si un programa gramaticalmente válido tiene un significado coherente. Estudio exhaustivo de las 6 comprobaciones estáticas, equivalencia de tipos y el diseño formal de la Tabla de Tipos y Tabla de Símbolos.
+      </p>
+
+      <div class="mt-4 p-3 bg-[#080d1a] rounded-lg border border-slate-800 text-xs font-mono text-slate-300 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <span class="text-cyan-400 font-bold">Respaldo Bibliográfico:</span>
+          <span>Ing. Mario Ramírez Tobar • "Traducción Dirigida por la sintaxis y comprobación de tipos" (pág. 707-1375).</span>
+        </div>
+        <a href="/bibliografia#ref-sdd-tipos-pdf" class="text-purple-400 hover:underline">Ver referencias ↗</a>
+      </div>
+    </div>
+
+    <!-- 1. Rol del Análisis Semántico -->
+    <section id="rol-analisis-semantico" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">1.</span> ¿Tiene mi Lenguaje Sentido? El Rol del Análisis Semántico
+      </h2>
+
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
+        Un programa puede ser perfectamente correcto desde la perspectiva léxica (todos los caracteres forman tokens válidos) y sintáctica (cumple la gramática libre de contexto), pero carecer por completo de sentido operativo. Por ejemplo, la sentencia:
+      </p>
+
+      <div class="p-3 bg-[#080d1a] rounded-lg border border-rose-500/30 font-mono text-xs text-rose-300">
+        int resultado = "hola mundo" * 45;
+      </div>
+
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
+        Estructuralmente coincide con <code class="text-cyan-400">TIPO ID = CADENA * NUMERO;</code>, pero multiplicar una cadena alfanumérica por un escalar no está definido en lenguajes fuertemente tipados. El analizador semántico utiliza el Árbol Sintáctico Abstracto (AST) y la información almacenada en las tablas auxiliares para verificar la corrección lógica y preparar la posterior generación de código intermedio.
+      </p>
+    </section>
+
+    <!-- 2. Las 6 Comprobaciones Semánticas Estáticas -->
+    <section id="comprobaciones-estaticas" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">2.</span> Las 6 Comprobaciones Semánticas Estáticas Fundamentales
+      </h2>
+
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
+        El material del Ing. Mario Ramírez Tobar (páginas 755 a 813 y 1229 a 1371) sistematiza las comprobaciones estáticas (en tiempo de compilación) en seis categorías rigurosas:
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-6 text-xs font-sans">
+        <!-- 1. Comprobación de Tipos -->
+        <div class="bg-[#0d1527] p-4 rounded-xl border border-slate-800 space-y-2">
+          <span class="font-mono text-xs text-cyan-400 font-bold uppercase tracking-wider">Comprobación 1</span>
+          <h3 class="font-bold text-white text-sm">Comprobación de Tipos</h3>
+          <p class="text-slate-400 leading-relaxed">
+            Verifica que los operadores solo se apliquen a operandos de tipos compatibles y que el valor asignado coincida con el tipo de la variable destino.
+          </p>
+          <div class="p-2 bg-[#080d1a] rounded font-mono text-xs text-rose-400">
+            int x = "aaa"; // ❌ Inválido: literal String no asignable a entero
+          </div>
+        </div>
+
+        <!-- 2. Comprobación de Nombres -->
+        <div class="bg-[#0d1527] p-4 rounded-xl border border-slate-800 space-y-2">
+          <span class="font-mono text-xs text-purple-400 font-bold uppercase tracking-wider">Comprobación 2</span>
+          <h3 class="font-bold text-white text-sm">Comprobación de Nombres</h3>
+          <p class="text-slate-400 leading-relaxed">
+            Garantiza que cualquier identificador utilizado en expresiones o llamadas haya sido declarado formalmente antes de su uso.
+          </p>
+          <div class="p-2 bg-[#080d1a] rounded font-mono text-xs text-rose-400">
+            int y = z + x; // ❌ Inválido si 'z' no fue declarada en el entorno
+          </div>
+        </div>
+
+        <!-- 3. Comprobación de Ámbitos (Scope) -->
+        <div class="bg-[#0d1527] p-4 rounded-xl border border-slate-800 space-y-2">
+          <span class="font-mono text-xs text-amber-300 font-bold uppercase tracking-wider">Comprobación 3</span>
+          <h3 class="font-bold text-white text-sm">Comprobación de Ámbitos (Scope)</h3>
+          <p class="text-slate-400 leading-relaxed">
+            El ámbito define el tiempo de vida y la visibilidad de los símbolos. Una variable declarada dentro de un bloque subordinado deja de existir al salir de dicho bloque.
+          </p>
+          <div class="p-2 bg-[#080d1a] rounded font-mono text-xs text-rose-400">
+            if (a > b) &#123; int temp = 10; &#125; temp = 20; // ❌ 'temp' fuera de ámbito
+          </div>
+        </div>
+
+        <!-- 4. Comprobación de Control de Flujo -->
+        <div class="bg-[#0d1527] p-4 rounded-xl border border-slate-800 space-y-2">
+          <span class="font-mono text-xs text-emerald-400 font-bold uppercase tracking-wider">Comprobación 4</span>
+          <h3 class="font-bold text-white text-sm">Comprobación de Control de Flujo</h3>
+          <p class="text-slate-400 leading-relaxed">
+            Ciertas sentencias están restringidas a contextos de flujo específicos. Por ejemplo, la instrucción <code class="text-white">break</code> o <code class="text-white">continue</code> es legal únicamente dentro de bucles o sentencias <code class="text-white">switch</code>.
+          </p>
+          <div class="p-2 bg-[#080d1a] rounded font-mono text-xs text-rose-400">
+            if (a > b) &#123; break; &#125; // ❌ 'break' no permitido en bloque 'if'
+          </div>
+        </div>
+
+        <!-- 5. Comprobación de Unicidad -->
+        <div class="bg-[#0d1527] p-4 rounded-xl border border-slate-800 space-y-2">
+          <span class="font-mono text-xs text-purple-400 font-bold uppercase tracking-wider">Comprobación 5</span>
+          <h3 class="font-bold text-white text-sm">Comprobación de Unicidad</h3>
+          <p class="text-slate-400 leading-relaxed">
+            Verifica que no existan identificadores duplicados en el mismo ámbito, etiquetas <code class="text-white">case</code> repetidas en un <code class="text-white">switch</code> o sentencias <code class="text-white">return</code> inalcanzables.
+          </p>
+          <div class="p-2 bg-[#080d1a] rounded font-mono text-xs text-rose-400">
+            if (x > 5) return 5; else return 2; return 10; // ❌ 'return 10' inalcanzable
+          </div>
+        </div>
+
+        <!-- 6. Comprobación de Acceso -->
+        <div class="bg-[#0d1527] p-4 rounded-xl border border-slate-800 space-y-2">
+          <span class="font-mono text-xs text-teal-400 font-bold uppercase tracking-wider">Comprobación 6</span>
+          <h3 class="font-bold text-white text-sm">Comprobación de Acceso</h3>
+          <p class="text-slate-400 leading-relaxed">
+            En lenguajes orientados a objetos, comprueba los modificadores de visibilidad (<code class="text-white">private</code>, <code class="text-white">protected</code>, <code class="text-white">public</code>).
+          </p>
+          <div class="p-2 bg-[#080d1a] rounded font-mono text-xs text-rose-400">
+            class C1 &#123; private int x; &#125; ... c1.x = 25; // ❌ Miembro 'x' es privado
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Sistemas de Tipos y Equivalencia -->
+    <section id="sistemas-de-tipos" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">3.</span> Sistemas de Tipos: Equivalencia Nominal vs Estructural
+      </h2>
+
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
+        ¿Cuándo se consideran dos tipos de datos "equivalentes" para permitir asignaciones o pasaje de parámetros? Existen dos doctrinas fundamentales en diseño de compiladores:
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4 text-xs font-sans">
+        <div class="p-4 bg-[#0d1527] rounded-xl border border-slate-800">
+          <h3 class="font-bold text-cyan-400 font-mono text-sm mb-2">Equivalencia Nominal (Por Nombre)</h3>
+          <p class="text-slate-400 leading-relaxed mb-2">
+            Dos tipos son equivalentes <strong>si y solo si comparten exactamente el mismo nombre identificador de tipo</strong> (empleado en Java, C++, C#).
+          </p>
+          <div class="p-2.5 bg-[#080d1a] rounded font-mono text-xs text-white space-y-1">
+            <p>class Coordenada &#123; int x, y; &#125;</p>
+            <p>class Punto &#123; int x, y; &#125;</p>
+            <p class="text-rose-400">Coordenada c = new Punto(); // ❌ Error de tipos nominal</p>
+          </div>
+        </div>
+
+        <div class="p-4 bg-[#0d1527] rounded-xl border border-slate-800">
+          <h3 class="font-bold text-amber-300 font-mono text-sm mb-2">Equivalencia Estructural</h3>
+          <p class="text-slate-400 leading-relaxed mb-2">
+            Dos tipos son equivalentes <strong>si su estructura interna y componentes elementales coinciden</strong> campo por campo y tipo por tipo (empleado en TypeScript, Go structs).
+          </p>
+          <div class="p-2.5 bg-[#080d1a] rounded font-mono text-xs text-white space-y-1">
+            <p>type Coordenada = &#123; x: number, y: number &#125;;</p>
+            <p>type Punto = &#123; x: number, y: number &#125;;</p>
+            <p class="text-emerald-400">let c: Coordenada = &#123; x: 5, y: 10 &#125;; // ✅ Válido estructuralmente</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Conversión implícita de tipos -->
+      <div class="p-4 bg-[#080d1a] rounded-xl border border-slate-800 space-y-2 text-xs">
+        <h4 class="font-mono font-bold text-emerald-400 uppercase">Conversión Implícita de Tipos (Coerción y Promoción):</h4>
+        <p class="text-slate-400 font-sans">
+          Tal como indica el PDF (pág. 843-863), los datos numéricos permiten conversión implícita siempre hacia el tipo con <strong>mayor jerarquía de almacenamiento</strong> para evitar pérdida de precisión:
+        </p>
+        <div class="p-3 bg-[#0d1527] rounded font-mono text-center text-white">
+          byte (1B) ➔ short (2B) ➔ int (4B) ➔ long (8B) ➔ float (4B IEEE) ➔ double (8B IEEE)
+        </div>
+        <p class="text-slate-400 font-sans">
+          Al evaluar <code class="text-cyan-400">int x = 25; float y = x + 3.14f;</code>, el compilador inserta una instrucción implícita de conversión semántica <code class="text-cyan-400">intToFloat(x)</code> en el AST antes de emitir la suma.
+        </p>
+      </div>
+    </section>
+
+    <!-- 4. Estructura de la Tabla de Tipos -->
+    <section id="tabla-de-tipos" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">4.</span> Especificación de la Tabla de Tipos
+      </h2>
+
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
+        La <strong>Tabla de Tipos</strong> es una estructura de datos fundamental del compilador que registra todos los tipos primitivos del lenguaje y los tipos derivados creados por el programador (arreglos, registros/structs, clases). Según la propuesta del Ing. Mario Ramírez Tobar (páginas 888 a 917), sus columnas esenciales son:
+      </p>
+
+      <div class="overflow-x-auto my-4 border border-slate-800 rounded-xl bg-[#080d1a]">
+        <table class="w-full text-left text-xs font-mono min-w-[520px]">
+          <thead class="bg-slate-900 text-white">
+            <tr>
+              <th class="p-2.5 border-b border-slate-800">Columna</th>
+              <th class="p-2.5 border-b border-slate-800">Tipo de Dato</th>
+              <th class="p-2.5 border-b border-slate-800">Descripción y Rol en el Compilador</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/60 text-slate-400">
+            <tr>
+              <td class="p-2.5 font-bold text-cyan-400">ID</td>
+              <td class="p-2.5">Entero</td>
+              <td class="p-2.5">Identificador numérico único del tipo (ej. 0=int, 1=bool, 2=vector).</td>
+            </tr>
+            <tr>
+              <td class="p-2.5 font-bold text-white">Nombre</td>
+              <td class="p-2.5">String</td>
+              <td class="p-2.5">Nombre literal del tipo asignado en el código fuente (ej. "vector", "integer").</td>
+            </tr>
+            <tr>
+              <td class="p-2.5 font-bold text-white">TipoBase</td>
+              <td class="p-2.5">ID_Tipo</td>
+              <td class="p-2.5">El tipo elemental del que se compone (para un arreglo de enteros, su TipoBase es 0).</td>
+            </tr>
+            <tr>
+              <td class="p-2.5 font-bold text-white">Padre</td>
+              <td class="p-2.5">ID_Tipo</td>
+              <td class="p-2.5">El tipo padre en jerarquía de herencia o derivación (0 si es primitivo).</td>
+            </tr>
+            <tr>
+              <td class="p-2.5 font-bold text-white">Dimensión</td>
+              <td class="p-2.5">Entero</td>
+              <td class="p-2.5">Cantidad de dimensiones si es un arreglo (1 para vector, 2 para matriz).</td>
+            </tr>
+            <tr>
+              <td class="p-2.5 font-bold text-white">Mínimo / Máximo</td>
+              <td class="p-2.5">Entero</td>
+              <td class="p-2.5">Límites inferior y superior de los índices de acceso para chequeo de rangos.</td>
+            </tr>
+            <tr>
+              <td class="p-2.5 font-bold text-white">Ámbito</td>
+              <td class="p-2.5">ID_Scope</td>
+              <td class="p-2.5">Contador o identificador del ámbito donde fue declarado el tipo.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 5. Estructura de la Tabla de Símbolos -->
+    <section id="tabla-de-simbolos" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">5.</span> Especificación de la Tabla de Símbolos
+      </h2>
+
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
+        La <strong>Tabla de Símbolos</strong> asocia cada nombre de identificador con su categoría gramatical, su tipo, sus parámetros y su <strong>dirección relativa en memoria</strong>. Esta dirección es la clave maestra para emitir código objeto con desplazamientos relativos respecto al Frame Pointer (<code class="text-cyan-400">-12(fp)</code>).
+      </p>
+
+      <div class="overflow-x-auto my-4 border border-slate-800 rounded-xl bg-[#080d1a]">
+        <table class="w-full text-left text-xs font-mono min-w-[520px]">
+          <thead class="bg-slate-900 text-white">
+            <tr>
+              <th class="p-2.5 border-b border-slate-800">Columna</th>
+              <th class="p-2.5 border-b border-slate-800">Significado</th>
+              <th class="p-2.5 border-b border-slate-800">Ejemplo de Valor</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/60 text-slate-400">
+            <tr>
+              <td class="p-2.5 font-bold text-cyan-400">ID</td>
+              <td class="p-2.5">Índice correlativo único en la tabla</td>
+              <td class="p-2.5 text-white">0, 1, 2, ...</td>
+            </tr>
+            <tr>
+              <td class="p-2.5 font-bold text-white">Nombre</td>
+              <td class="p-2.5">Identificador textual de la variable o subprograma</td>
+              <td class="p-2.5 text-white">"factorial", "x", "v"</td>
+            </tr>
+            <tr>
+              <td class="p-2.5 font-bold text-purple-400">Categoría</td>
+              <td class="p-2.5">Clasificación sintáctica del símbolo</td>
+              <td class="p-2.5 text-amber-300">var, func, proc, param, return, class</td>
+            </tr>
+            <tr>
+              <td class="p-2.5 font-bold text-white">Tipo</td>
+              <td class="p-2.5">Referencia al ID correspondiente en la Tabla de Tipos</td>
+              <td class="p-2.5 text-white">0 (integer), 2 (vector)</td>
+            </tr>
+            <tr>
+              <td class="p-2.5 font-bold text-white">NumParam</td>
+              <td class="p-2.5">Cantidad de parámetros formales si es subprograma</td>
+              <td class="p-2.5 text-white">1 (para factorial), 2 (para suma)</td>
+            </tr>
+            <tr>
+              <td class="p-2.5 font-bold text-white">ListParam</td>
+              <td class="p-2.5">Vector de tipos de los parámetros formales</td>
+              <td class="p-2.5 text-white">[0] (un entero), [2, 0] (vector y entero)</td>
+            </tr>
+            <tr>
+              <td class="p-2.5 font-bold text-cyan-400">Dirección (Dir)</td>
+              <td class="p-2.5">Desplazamiento relativo en memoria dentro del marco</td>
+              <td class="p-2.5 text-cyan-400">-12(fp), -16(fp), offset 0, 1, 2</td>
+            </tr>
+            <tr>
+              <td class="p-2.5 font-bold text-white">Ámbito</td>
+              <td class="p-2.5">Identificador del entorno de anidamiento</td>
+              <td class="p-2.5 text-white">0 (global), factorial, suma</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 6. Caso de Estudio Completo Paso a Paso: Pascal -->
+    <section id="caso-estudio-pascal" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">6.</span> Caso de Estudio Completo: Programa en Pascal del Material Oficial
+      </h2>
+
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
+        En las páginas 959 a 1228 del PDF, el Ing. Mario Ramírez Tobar presenta un ejemplo integral en un lenguaje estilo Pascal con funciones, tipos definidos por el usuario y arreglos:
+      </p>
+
+      <CodeBlock
+        title="Código Fuente en Pascal (Cátedra de Compiladores 2)"
+        lang="pascal"
+        code={`program p;
+type vector = array [0 .. 7] of integer;
+var x : integer; v : vector;
+
+function factorial(x : integer) : integer;
+var y, z : integer;
+begin
+  y := 1;
+  for z := 1 to x do y := y * z;
+  factorial := y;
+end;
+
+function suma(v : vector; k : integer) : vector;
+type vect = array [1 .. 8] of integer;
+var x : integer; v1 : vect;
+begin
+  for x := 0 to k do v1[x + 1] := v[x];
+  suma := v1;
+end;
+
+begin
+  x := 5;
+  x := factorial(x);
+  for x := 0 to 7 do v[x] := x;
+  v := suma(v, x);
+end.`}
+      />
+
+      <div class="space-y-4 mt-6">
+        <h3 class="text-sm font-bold text-white font-mono">Tabla de Tipos Generada:</h3>
+        <div class="overflow-x-auto border border-slate-800 rounded-xl bg-[#080d1a]">
+          <table class="w-full text-left text-xs font-mono min-w-[520px]">
+            <thead class="bg-slate-900 text-white">
+              <tr>
+                <th class="p-2 border-b border-slate-800">ID</th>
+                <th class="p-2 border-b border-slate-800">Nombre</th>
+                <th class="p-2 border-b border-slate-800">TipoBase</th>
+                <th class="p-2 border-b border-slate-800">Padre</th>
+                <th class="p-2 border-b border-slate-800">Dimensión</th>
+                <th class="p-2 border-b border-slate-800">Mínimo</th>
+                <th class="p-2 border-b border-slate-800">Máximo</th>
+                <th class="p-2 border-b border-slate-800">Ámbito</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60 text-slate-400">
+              <tr>
+                <td class="p-2 text-cyan-400">0</td>
+                <td class="p-2 font-bold text-white">integer</td>
+                <td class="p-2">-</td>
+                <td class="p-2">-</td>
+                <td class="p-2">-</td>
+                <td class="p-2">-</td>
+                <td class="p-2">-</td>
+                <td class="p-2">0 (global)</td>
+              </tr>
+              <tr>
+                <td class="p-2 text-cyan-400">1</td>
+                <td class="p-2 font-bold text-white">boolean</td>
+                <td class="p-2">-</td>
+                <td class="p-2">-</td>
+                <td class="p-2">-</td>
+                <td class="p-2">-</td>
+                <td class="p-2">-</td>
+                <td class="p-2">0 (global)</td>
+              </tr>
+              <tr>
+                <td class="p-2 text-cyan-400">2</td>
+                <td class="p-2 font-bold text-white">vector</td>
+                <td class="p-2">0 (integer)</td>
+                <td class="p-2">-</td>
+                <td class="p-2">1</td>
+                <td class="p-2">0</td>
+                <td class="p-2">7</td>
+                <td class="p-2">0 (global)</td>
+              </tr>
+              <tr>
+                <td class="p-2 text-cyan-400">3</td>
+                <td class="p-2 font-bold text-white">vect</td>
+                <td class="p-2">0 (integer)</td>
+                <td class="p-2">-</td>
+                <td class="p-2">1</td>
+                <td class="p-2">1</td>
+                <td class="p-2">8</td>
+                <td class="p-2">suma</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 class="text-sm font-bold text-white font-mono mt-6">Tabla de Símbolos Generada:</h3>
+        <div class="overflow-x-auto border border-slate-800 rounded-xl bg-[#080d1a]">
+          <table class="w-full text-left text-xs font-mono min-w-[520px]">
+            <thead class="bg-slate-900 text-white">
+              <tr>
+                <th class="p-2 border-b border-slate-800">ID</th>
+                <th class="p-2 border-b border-slate-800">Nombre</th>
+                <th class="p-2 border-b border-slate-800">Categoría</th>
+                <th class="p-2 border-b border-slate-800">Tipo</th>
+                <th class="p-2 border-b border-slate-800">NumParam</th>
+                <th class="p-2 border-b border-slate-800">ListParam</th>
+                <th class="p-2 border-b border-slate-800">Dir</th>
+                <th class="p-2 border-b border-slate-800">Ámbito</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60 text-slate-400">
+              <tr>
+                <td class="p-2 text-cyan-400">0</td>
+                <td class="p-2 font-bold text-white">x</td>
+                <td class="p-2 text-amber-300">var</td>
+                <td class="p-2">0 (integer)</td>
+                <td class="p-2">-</td>
+                <td class="p-2">-</td>
+                <td class="p-2 text-cyan-400">0</td>
+                <td class="p-2">0 (global)</td>
+              </tr>
+              <tr>
+                <td class="p-2 text-cyan-400">1</td>
+                <td class="p-2 font-bold text-white">v</td>
+                <td class="p-2 text-amber-300">var</td>
+                <td class="p-2">2 (vector)</td>
+                <td class="p-2">-</td>
+                <td class="p-2">-</td>
+                <td class="p-2 text-cyan-400">1</td>
+                <td class="p-2">0 (global)</td>
+              </tr>
+              <tr>
+                <td class="p-2 text-cyan-400">2</td>
+                <td class="p-2 font-bold text-purple-400">factorial</td>
+                <td class="p-2 text-purple-300">func</td>
+                <td class="p-2">0 (integer)</td>
+                <td class="p-2">1</td>
+                <td class="p-2">[0]</td>
+                <td class="p-2">-</td>
+                <td class="p-2">0 (global)</td>
+              </tr>
+              <tr>
+                <td class="p-2 text-cyan-400">3</td>
+                <td class="p-2 font-bold text-white">x</td>
+                <td class="p-2 text-teal-300">param</td>
+                <td class="p-2">0 (integer)</td>
+                <td class="p-2">-</td>
+                <td class="p-2">-</td>
+                <td class="p-2 text-cyan-400">0</td>
+                <td class="p-2">factorial</td>
+              </tr>
+              <tr>
+                <td class="p-2 text-cyan-400">4</td>
+                <td class="p-2 font-bold text-white">y</td>
+                <td class="p-2 text-amber-300">var</td>
+                <td class="p-2">0 (integer)</td>
+                <td class="p-2">-</td>
+                <td class="p-2">-</td>
+                <td class="p-2 text-cyan-400">1</td>
+                <td class="p-2">factorial</td>
+              </tr>
+              <tr>
+                <td class="p-2 text-cyan-400">5</td>
+                <td class="p-2 font-bold text-white">z</td>
+                <td class="p-2 text-amber-300">var</td>
+                <td class="p-2">0 (integer)</td>
+                <td class="p-2">-</td>
+                <td class="p-2">-</td>
+                <td class="p-2 text-cyan-400">2</td>
+                <td class="p-2">factorial</td>
+              </tr>
+              <tr>
+                <td class="p-2 text-cyan-400">6</td>
+                <td class="p-2 font-bold text-white">return</td>
+                <td class="p-2 text-rose-300">return</td>
+                <td class="p-2">0 (integer)</td>
+                <td class="p-2">-</td>
+                <td class="p-2">-</td>
+                <td class="p-2 text-cyan-400">3</td>
+                <td class="p-2">factorial</td>
+              </tr>
+              <tr>
+                <td class="p-2 text-cyan-400">7</td>
+                <td class="p-2 font-bold text-purple-400">suma</td>
+                <td class="p-2 text-purple-300">func</td>
+                <td class="p-2">2 (vector)</td>
+                <td class="p-2">2</td>
+                <td class="p-2">[2, 0]</td>
+                <td class="p-2">-</td>
+                <td class="p-2">0 (global)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Navegación entre módulos -->
+    <div class="pt-8 border-t border-slate-800 flex items-center justify-between font-mono text-xs">
+      <a href="/modulo/3-analisis-sintactico" class="px-4 py-2 rounded-lg bg-[#0d1527] hover:bg-slate-900 text-slate-400 hover:text-white transition">
+        ◀ Anterior: Módulo 3 (Sintáctico)
+      </a>
+      <a href="/modulo/5-codigo-intermedio" class="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-600 hover:bg-gradient-to-r from-purple-500 to-indigo-600/80 text-white font-bold transition flex items-center gap-2">
+        <span>Siguiente: Módulo 5 (Código Intermedio)</span>
+        <span>▶</span>
+      </a>
+    </div>
+  </div>
+</MainLayout>
+

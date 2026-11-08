@@ -1,0 +1,421 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+import CodeBlock from '../../components/CodeBlock.astro';
+import RiscvSimulator from '../../components/lab/RiscvSimulator.vue';
+---
+
+<MainLayout
+  title="Módulo 7: Arquitectura RISC-V y Ensamblador"
+  description="Arquitectura RV32I, glosario ABI, mnemónicos, Frame Pointer vs Stack Pointer, distribución canónica -offset(fp), matriz de cuádruplas y trazado paso a paso."
+  currentSlug="7-riscv"
+>
+  <div class="space-y-12">
+    <!-- Cabecera del Módulo -->
+    <div class="border-b border-slate-800 pb-6">
+      <div class="flex items-center gap-2 mb-2 font-mono text-xs">
+        <span class="px-2.5 py-0.5 rounded bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold">MÓDULO 7</span>
+        <span class="text-slate-400">Back-End • Arquitectura de Procesador & Silicio</span>
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+        Arquitectura RISC-V (RV32I) y Generación de Código Objeto
+      </h1>
+      <p class="text-base sm:text-lg text-slate-300 mt-2 leading-relaxed">
+        El puente final entre el Código de Tres Direcciones y el procesador físico. Basado íntegramente en las diapositivas de clase del <strong class="text-white">Ing. Mario Ramírez Tobar</strong>, este módulo detalla los registros ABI, la convención canónica del Frame Pointer (<code class="text-cyan-400">-offset(fp)</code>), la mecánica de llamadas y la matriz de traducción de cuádruplas.
+      </p>
+
+      <div class="mt-4 p-3 bg-[#080d1a] rounded-lg border border-slate-800 text-xs font-mono text-slate-300 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <span class="text-cyan-400 font-bold">Fuente Principal y Obligatoria:</span>
+          <span>Ing. Mario Ramírez Tobar • "De Código 3 Direcciones a RISC-V | Compiladores 2" (marito-website.vercel.app).</span>
+        </div>
+        <a href="https://marito-website.vercel.app/slides/compiladores-2/risc-v.html" target="_blank" rel="noopener noreferrer" class="text-purple-400 hover:underline">
+          Diapositivas oficiales ↗
+        </a>
+      </div>
+    </div>
+
+    <!-- 1. El Puente entre C3D y el Hardware -->
+    <section id="puente-c3d-hardware" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">1.</span> El Puente entre C3D y el Silicio
+      </h2>
+
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
+        En las fases previas generamos Código de Tres Direcciones (C3D) y Cuádruplas asumiendo estructuras abstractas con temporales ilimitados. Al llegar a la generación de código final, <strong>debemos traducir esa lógica a instrucciones que entiende el silicio</strong>. En la arquitectura <strong>RISC-V (RV32I)</strong>, cada palabra tiene un ancho fijo de 32 bits (4 bytes) y la memoria se direcciona a nivel de bytes en formato little-endian.
+      </p>
+    </section>
+
+    <!-- 2. Glosario Completo de Registros ABI RV32I -->
+    <section id="glosario-registros-abi" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">2.</span> Glosario de Registros ABI (RV32I)
+      </h2>
+
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
+        RISC-V cuenta con 32 registros enteros de hardware (<code class="text-cyan-400">x0</code> a <code class="text-cyan-400">x31</code>). La especificación estándar define nombres nemotécnicos (ABI) con roles precisos que el compilador debe respetar estrictamente:
+      </p>
+
+      <div class="overflow-x-auto my-4 border border-slate-800 rounded-xl bg-[#080d1a]">
+        <table class="w-full text-left text-xs font-mono min-w-[520px]">
+          <thead class="bg-slate-900 text-white">
+            <tr>
+              <th class="p-2.5 border-b border-slate-800">Abreviación ABI</th>
+              <th class="p-2.5 border-b border-slate-800">Registro Hardware</th>
+              <th class="p-2.5 border-b border-slate-800">Nombre Completo</th>
+              <th class="p-2.5 border-b border-slate-800">Uso Específico en Compiladores</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/60 text-slate-400">
+            <tr class="hover:bg-[#0d1527]">
+              <td class="p-2.5 font-bold text-cyan-400">zero</td>
+              <td class="p-2.5">x0</td>
+              <td class="p-2.5 text-white">Zero Constant</td>
+              <td class="p-2.5">Siempre vale 0 por hardware. Inmutable. Ideal para resetear variables o descartar resultados.</td>
+            </tr>
+            <tr class="hover:bg-[#0d1527]">
+              <td class="p-2.5 font-bold text-cyan-400">ra</td>
+              <td class="p-2.5">x1</td>
+              <td class="p-2.5 text-white">Return Address</td>
+              <td class="p-2.5 text-amber-300 font-bold">Dirección de Retorno. Guarda a dónde volver tras un subprograma invocado con `jal`.</td>
+            </tr>
+            <tr class="hover:bg-[#0d1527]">
+              <td class="p-2.5 font-bold text-cyan-400">sp</td>
+              <td class="p-2.5">x2</td>
+              <td class="p-2.5 text-white">Stack Pointer</td>
+              <td class="p-2.5">Puntero de Pila. Apunta al fondo actual móvil de la pila de memoria (crece hacia abajo ⬇).</td>
+            </tr>
+            <tr class="hover:bg-[#0d1527]">
+              <td class="p-2.5 font-bold text-cyan-400">gp</td>
+              <td class="p-2.5">x3</td>
+              <td class="p-2.5 text-white">Global Pointer</td>
+              <td class="p-2.5">Puntero Global. Acceso rápido a variables globales y pool de constantes en `.data`.</td>
+            </tr>
+            <tr class="hover:bg-[#0d1527]">
+              <td class="p-2.5 font-bold text-cyan-400">tp</td>
+              <td class="p-2.5">x4</td>
+              <td class="p-2.5 text-white">Thread Pointer</td>
+              <td class="p-2.5">Puntero de Hilo. Almacenamiento local de subprocesos / hilos.</td>
+            </tr>
+            <tr class="hover:bg-[#0d1527]">
+              <td class="p-2.5 font-bold text-cyan-400">t0 - t2</td>
+              <td class="p-2.5">x5 - x7</td>
+              <td class="p-2.5 text-white">Temporaries</td>
+              <td class="p-2.5">Registros temporales rápidos y volátiles para evaluar expresiones intermedias. No preservados por callee.</td>
+            </tr>
+            <tr class="hover:bg-[#0d1527] bg-rose-950/20">
+              <td class="p-2.5 font-bold text-purple-400">fp / s0</td>
+              <td class="p-2.5">x8</td>
+              <td class="p-2.5 text-white">Frame Pointer</td>
+              <td class="p-2.5 text-purple-400 font-bold">Puntero de Marco. Base fija e inamovible de la función activa. Ancla estática.</td>
+            </tr>
+            <tr class="hover:bg-[#0d1527]">
+              <td class="p-2.5 font-bold text-cyan-400">s1</td>
+              <td class="p-2.5">x9</td>
+              <td class="p-2.5 text-white">Saved Register</td>
+              <td class="p-2.5">Registro guardado. Variables de larga vida (Callee-saved).</td>
+            </tr>
+            <tr class="hover:bg-[#0d1527]">
+              <td class="p-2.5 font-bold text-cyan-400">a0 - a7</td>
+              <td class="p-2.5">x10 - x17</td>
+              <td class="p-2.5 text-white">Arguments / Return</td>
+              <td class="p-2.5 text-emerald-300 font-bold">Primeros 8 parámetros formales. `a0` y `a1` reciben además los valores de retorno.</td>
+            </tr>
+            <tr class="hover:bg-[#0d1527]">
+              <td class="p-2.5 font-bold text-cyan-400">s2 - s11</td>
+              <td class="p-2.5">x18 - x27</td>
+              <td class="p-2.5 text-white">Saved Registers</td>
+              <td class="p-2.5">Registros guardados preservados por el callee.</td>
+            </tr>
+            <tr class="hover:bg-[#0d1527]">
+              <td class="p-2.5 font-bold text-cyan-400">t3 - t6</td>
+              <td class="p-2.5">x28 - x31</td>
+              <td class="p-2.5 text-white">Temporaries</td>
+              <td class="p-2.5">Temporales adicionales volátiles.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 3. Mnemónicos y Regla Nemotécnica -->
+    <section id="mnemonicos-convenciones" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">3.</span> Mnemónicos RISC-V y Regla Nemotécnica Oficial
+      </h2>
+
+      <div class="p-4 bg-[#080d1a] rounded-xl border border-amber-500/40 text-xs font-mono space-y-2">
+        <h4 class="text-amber-300 font-bold uppercase flex items-center gap-2">
+          <span>💡</span> Regla Nemotécnica de Cátedra (Slide 10):
+        </h4>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center pt-2">
+          <div class="p-2 rounded bg-[#0d1527] border border-slate-800">
+            <span class="text-emerald-400 font-bold block text-sm">Termina en "i"</span>
+            <span class="text-xs text-slate-400">Inmediato (Constante)</span>
+            <span class="text-xs text-cyan-400 block">addi, slli, slti</span>
+          </div>
+          <div class="p-2 rounded bg-[#0d1527] border border-slate-800">
+            <span class="text-purple-400 font-bold block text-sm">Empieza con "b"</span>
+            <span class="text-xs text-slate-400">Branch (Salto condicional)</span>
+            <span class="text-xs text-cyan-400 block">beq, bne, blt, bge</span>
+          </div>
+          <div class="p-2 rounded bg-[#0d1527] border border-slate-800">
+            <span class="text-cyan-400 font-bold block text-sm">Empieza con "l"</span>
+            <span class="text-xs text-slate-400">Load (Memoria ➔ CPU)</span>
+            <span class="text-xs text-white block">lw, lb, ld</span>
+          </div>
+          <div class="p-2 rounded bg-[#0d1527] border border-slate-800">
+            <span class="text-purple-300 font-bold block text-sm">Empieza con "s"</span>
+            <span class="text-xs text-slate-400">Store (CPU ➔ Memoria)</span>
+            <span class="text-xs text-white block">sw, sb, sd</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. La Arquitectura de Frame Pointer: ¿Por qué usar fp y no sp? -->
+    <section id="arquitectura-frame-pointer" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">4.</span> Arquitectura del Frame Pointer: ¿Por qué usar fp y no sp?
+      </h2>
+
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
+        En las diapositivas 11 a 13 y 27 a 29 de la página web oficial, el Ing. Mario Ramírez Tobar expone con total contundencia la razón técnica detrás del Frame Pointer:
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4 text-xs font-sans">
+        <div class="p-4 bg-rose-950/30 border border-rose-500/40 rounded-xl space-y-2">
+          <strong class="text-rose-400 font-mono text-sm block">El Caos del Puntero Móvil sp:</strong>
+          <p class="text-slate-400 leading-relaxed">
+            El puntero <code class="text-white">sp</code> es <strong>volátil y móvil</strong>: cada vez que preparas argumentos para llamar a otra función o apilas datos, <code class="text-white">sp</code> cambia de valor (<code class="text-cyan-400">addi sp, sp, -16</code>).
+          </p>
+          <p class="text-slate-400 leading-relaxed">
+            Si la variable <code class="text-white">x</code> estaba en <code class="text-white">4(sp)</code> y luego empujas 3 argumentos, ¡ahora <code class="text-white">x</code> pasa a estar en <code class="text-white">16(sp)</code>! El compilador tendría que recalcular el offset de todas las variables instrucción por instrucción.
+          </p>
+        </div>
+
+        <div class="p-4 bg-emerald-950/30 border border-emerald-500/40 rounded-xl space-y-2">
+          <strong class="text-emerald-400 font-mono text-sm block">La Solución Perfecta con Frame Pointer (fp/s0):</strong>
+          <p class="text-slate-400 leading-relaxed">
+            <code class="text-white">fp</code> es un <strong>ancla estática</strong>: se fija exactamente al entrar a la función en el prólogo y <strong>NUNCA se mueve</strong>.
+          </p>
+          <p class="text-slate-400 leading-relaxed">
+            La variable <code class="text-white">x</code> siempre residirá en <code class="text-emerald-300 font-bold">-16(fp)</code> desde la primera línea de la función hasta el <code class="text-white">return</code>, sin importar cuánto se desplace <code class="text-white">sp</code> por debajo.
+          </p>
+        </div>
+      </div>
+
+      <!-- Distribución canónica de la pila -->
+      <div class="bg-[#080d1a] p-5 rounded-xl border border-slate-800 space-y-3 font-mono text-xs">
+        <h3 class="text-sm font-bold text-white">Distribución Canónica del Marco de Pila:</h3>
+        <div class="p-4 bg-[#0d1527] rounded-lg border border-slate-800 space-y-1.5 text-white">
+          <p class="text-cyan-400 font-bold">0(fp)   ➔ Antiguo Frame Pointer (s0 anterior - Enlace Dinámico)</p>
+          <p class="text-amber-300 font-bold">-4(fp)  ➔ Dirección de Retorno (ra)</p>
+          <p class="text-slate-400">-8(fp)  ➔ Primer parámetro o puntero 'this'</p>
+          <p class="text-emerald-400 font-bold">-12(fp) ➔ ¡PRIMERA VARIABLE LOCAL! (a, i, contador...)</p>
+          <p class="text-slate-300">-16(fp) ➔ Segunda variable local (x, total...)</p>
+          <p class="text-slate-300">-20(fp) ➔ Temporales del C3D (t1, t2, t3...)</p>
+        </div>
+        <p class="text-xs text-slate-400 font-sans italic">
+          * Justificación técnica: Si no respaldamos `ra` y el `s0` previo en `0(fp)` y `-4(fp)`, la función destruiría la ruta de regreso y el procesador colapsaría en bucle infinito. Por ello, `-12(fp)` es el primer byte seguro para variables del usuario.
+        </p>
+      </div>
+    </section>
+
+    <!-- 5. Mecánica de Saltos: j vs jal -->
+    <section id="saltos-j-jal" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">5.</span> Mecánica de Saltos: j (Simple) vs jal (Subprogramas)
+      </h2>
+
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
+        En las diapositivas 30 y 31 de la referencia web se clarifica una regla de oro para el generador de código:
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4 text-xs font-sans">
+        <div class="p-4 bg-[#0d1527] rounded-xl border border-slate-800 space-y-2">
+          <h3 class="font-bold text-cyan-400 font-mono text-sm">j etiqueta (Jump Simple)</h3>
+          <ul class="space-y-1 text-slate-400 list-disc list-inside">
+            <li><strong>¿Qué hace?</strong> Salta incondicionalmente a una etiqueta dentro del mismo marco.</li>
+            <li><strong>¿Modifica la pila?</strong> NO.</li>
+            <li><strong>¿Modifica ra?</strong> NO toca el registro <code class="text-white">ra</code>.</li>
+            <li><strong>Uso:</strong> Exclusivo para estructuras de control internas (<code class="text-white">if, else, while, for, switch</code>). Equivalente a <code class="text-white">goto</code>.</li>
+          </ul>
+        </div>
+
+        <div class="p-4 bg-[#0d1527] rounded-xl border border-slate-800 space-y-2">
+          <h3 class="font-bold text-purple-400 font-mono text-sm">jal ra, funcion (Jump and Link)</h3>
+          <ul class="space-y-1 text-slate-400 list-disc list-inside">
+            <li><strong>¿Qué hace?</strong> Salta a la función y guarda automáticamente la dirección de retorno (<code class="text-white">PC + 4</code>) en <code class="text-white">ra</code>.</li>
+            <li><strong>¿Modifica la pila?</strong> Sí, la función invocada creará un nuevo marco en su prólogo.</li>
+            <li><strong>Uso:</strong> Exclusivo para llamadas a subprogramas y métodos.</li>
+            <li><strong>Retorno:</strong> La función hija regresa con <code class="text-white">ret</code> (<code class="text-white">jr ra</code>).</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Matriz de Cuádruplas a RISC-V -->
+    <section id="matriz-cuadruplas-riscv" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">6.</span> Matriz de Traducción Directa de Cuádruplas a RISC-V
+      </h2>
+
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
+        La correspondencia directa entre las cuádruplas del compilador y el ensamblador emitido bajo el modelo basado en pila (Slides 42-44) es:
+      </p>
+
+      <div class="overflow-x-auto my-4 border border-slate-800 rounded-xl bg-[#080d1a]">
+        <table class="w-full text-left text-xs font-mono min-w-[520px]">
+          <thead class="bg-slate-900 text-white">
+            <tr>
+              <th class="p-2.5 border-b border-slate-800">Cuádrupla C3D</th>
+              <th class="p-2.5 border-b border-slate-800">Instrucciones RISC-V Emitidas</th>
+              <th class="p-2.5 border-b border-slate-800">Estrategia en el Compilador</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/60 text-slate-400">
+            <tr class="hover:bg-[#0d1527]">
+              <td class="p-2.5 font-bold text-cyan-400">(+ , a , b , t)</td>
+              <td class="p-2.5 text-white">lw t0, offA(fp) ; lw t1, offB(fp) ; add t2, t0, t1 ; sw t2, offT(fp)</td>
+              <td class="p-2.5">Cargar operandos de la pila a temporales, sumar y guardar resultado en la ranura.</td>
+            </tr>
+            <tr class="hover:bg-[#0d1527]">
+              <td class="p-2.5 font-bold text-purple-400">(if> , a , b , L1)</td>
+              <td class="p-2.5 text-white">lw t0, offA(fp) ; lw t1, offB(fp) ; bgt t0, t1, L1</td>
+              <td class="p-2.5">Cargar valores y emitir branch condicional hacia la etiqueta destino.</td>
+            </tr>
+            <tr class="hover:bg-[#0d1527]">
+              <td class="p-2.5 font-bold text-amber-300">(goto , _ , _ , L1)</td>
+              <td class="p-2.5 text-white">j L1</td>
+              <td class="p-2.5">Salto incondicional directo (sin modificar <code class="text-white">ra</code>).</td>
+            </tr>
+            <tr class="hover:bg-[#0d1527]">
+              <td class="p-2.5 font-bold text-emerald-400">([]= , heap , H , val)</td>
+              <td class="p-2.5 text-white">sw t0, offset(a0)</td>
+              <td class="p-2.5">Almacenamiento de atributo en dirección persistente del Heap indexada por <code class="text-white">this</code>.</td>
+            </tr>
+            <tr class="hover:bg-[#0d1527]">
+              <td class="p-2.5 font-bold text-purple-300">(call , func , 2 , t0)</td>
+              <td class="p-2.5 text-white">jal ra, func ; sw a0, offT(fp)</td>
+              <td class="p-2.5">Llamada con enlace y captura inmediata del valor devuelto en <code class="text-white">a0</code> salvándolo en la pila local.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 7. Casos de Estudio Completos Desarrollados Paso a Paso -->
+    <section id="casos-estudio-riscv" class="space-y-6 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">7.</span> Casos de Estudio Completos Desarrollados Línea por Línea
+      </h2>
+
+      <!-- Caso Completo Java a RISC-V (Slides 36-37) -->
+      <div class="bg-[#0d1527] p-5 rounded-xl border border-slate-800 space-y-3">
+        <span class="text-xs font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold">
+          CASO 1: DE MÉTODO JAVA A RISC-V CON FRAME POINTER
+        </span>
+        <h3 class="text-lg font-bold text-white">Método procesar(int a, int b)</h3>
+
+        <CodeBlock
+          title="Código Fuente en Java"
+          lang="java"
+          code={`public int procesar(int a, int b) {
+    int total = 0;
+    int factor = a + b * 2;
+    while (factor > 0) {
+        total = total + factor;
+        factor = factor - 1;
+    }
+    return total;
+}`}
+        />
+
+        <div class="p-3 bg-[#080d1a] rounded-lg border border-slate-800 font-mono text-sm sm:text-base text-slate-300">
+          <strong class="text-cyan-400 block mb-1">Mapeo del Marco (32 Bytes):</strong>
+          0(fp)=s0_prev, -4(fp)=ra, -8(fp)=a, -12(fp)=b, -16(fp)=total, -20(fp)=factor, -24(fp)=t1
+        </div>
+
+        <CodeBlock
+          title="RISC-V Emitido con Explicación Línea por Línea"
+          lang="assembly"
+          code={`procesar:
+  addi sp, sp, -32        # 1. Prólogo: reservar 32 bytes (múltiplo de 16)
+  sw   s0, 28(sp)         # 2. 0(fp): Salvar Frame Pointer previo
+  sw   ra, 24(sp)         # 3. -4(fp): Salvar dirección de retorno ra
+  addi s0, sp, 28         # 4. Fijar s0 como base fija inamovible
+
+  # Resguardo de argumentos en la pila local
+  sw   a0, -8(s0)         # 5. Guardar argumento 'a' en -8(fp)
+  sw   a1, -12(s0)        # 6. Guardar argumento 'b' en -12(fp)
+
+  # total = 0
+  sw   zero, -16(s0)      # 7. Inicializar variable 'total' en 0
+
+  # factor = a + b * 2
+  lw   t0, -12(s0)        # 8. Cargar 'b' de la pila
+  slli t1, t0, 1          # 9. t1 = b * 2 (shift izquierdo rápido)
+  lw   t2, -8(s0)         # 10. Cargar 'a' de la pila
+  add  t3, t2, t1         # 11. t3 = a + (b * 2)
+  sw   t3, -20(s0)        # 12. factor = t3 (guardar en -20(fp))
+
+L_while_cond:
+  lw   t0, -20(s0)        # 13. Cargar 'factor'
+  ble  t0, zero, L_while_end # 14. if (factor <= 0) salir del bucle
+
+  # total = total + factor
+  lw   t1, -16(s0)        # 15. Cargar 'total'
+  add  t1, t1, t0         # 16. total + factor
+  sw   t1, -16(s0)        # 17. Guardar en 'total'
+
+  # factor = factor - 1
+  addi t0, t0, -1         # 18. Decrementar factor
+  sw   t0, -20(s0)        # 19. Guardar nuevo factor
+  j    L_while_cond       # 20. j incondicional al inicio de la condición
+
+L_while_end:
+  # return total (cargar en a0 según ABI)
+  lw   a0, -16(s0)        # 21. a0 = valor de retorno 'total'
+
+  # Epílogo
+  lw   ra, -4(s0)         # 22. Restaurar ra original
+  lw   s0, 0(s0)          # 23. Restaurar s0 original de la función llamadora
+  addi sp, sp, 32         # 24. Desapilar el marco completo
+  ret                     # 25. jr ra (retorno limpio al invocador)`}
+        />
+      </div>
+
+      <!-- Caso Recursión Factorial (Slides 47) -->
+      <div class="bg-[#0d1527] p-5 rounded-xl border border-slate-800 space-y-3">
+        <span class="text-xs font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 font-bold">
+          CASO 2: FACTORIAL RECURSIVO Y CAPTURA DE RETORNO EN PILA
+        </span>
+        <h3 class="text-lg font-bold text-white">¿Dónde está el Retorno en Cada Nivel?</h3>
+        <p class="text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
+          Principio vital de la cátedra: El registro <code class="text-white">a0</code> es un canal de paso volátil. Si la función llamadora no respalda <code class="text-white">a0</code> inmediatamente en su pila local (<code class="text-cyan-400">-12(fp)</code>) tan pronto como el control regresa del <code class="text-white">jal</code>, cualquier llamada subsiguiente destruiría el valor devuelto.
+        </p>
+      </div>
+    </section>
+
+    <!-- Simulador embebido en el módulo -->
+    <div class="my-8">
+      <div class="mb-3">
+        <span class="text-xs font-mono font-bold text-cyan-400 uppercase">Simulador Interactivo</span>
+        <h3 class="text-lg font-bold text-white">Inspeccione la Pila Real (-offset(fp)) en Ejecución</h3>
+      </div>
+      <RiscvSimulator client:visible />
+    </div>
+
+    <!-- Navegación entre módulos -->
+    <div class="pt-8 border-t border-slate-800 flex items-center justify-between font-mono text-xs">
+      <a href="/modulo/6-optimizacion" class="px-4 py-2 rounded-lg bg-[#0d1527] hover:bg-slate-900 text-slate-400 hover:text-white transition">
+        ◀ Anterior: Módulo 6 (Optimización)
+      </a>
+      <a href="/modulo/8-paradigmas" class="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-600 hover:bg-gradient-to-r from-purple-500 to-indigo-600/80 text-white font-bold transition flex items-center gap-2">
+        <span>Siguiente: Módulo 8 (Paradigmas)</span>
+        <span>▶</span>
+      </a>
+    </div>
+  </div>
+</MainLayout>
+

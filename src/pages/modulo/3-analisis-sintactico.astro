@@ -1,0 +1,385 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+import CodeBlock from '../../components/CodeBlock.astro';
+import ExpressionAnalyzer from '../../components/lab/ExpressionAnalyzer.vue';
+import { renderLatex } from '../../utils/katexRenderer';
+---
+
+<MainLayout
+  title="Módulo 3: Análisis Sintáctico"
+  description="Gramáticas formales, ambigüedad, eliminación de recursividad izquierda con acciones semánticas, funcionamiento LIFO del Stack en LL y LR, y SDD/SDT."
+  currentSlug="3-analisis-sintactico"
+>
+  <div class="space-y-12">
+    <!-- Cabecera del Módulo -->
+    <div class="border-b border-slate-800 pb-6">
+      <div class="flex items-center gap-2 mb-2 font-mono text-xs">
+        <span class="px-2.5 py-0.5 rounded bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold">MÓDULO 3</span>
+        <span class="text-slate-400">Front-End • Fase de Estructura</span>
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+        Análisis Sintáctico: Gramáticas, el Stack y Métodos LL / LR
+      </h1>
+      <p class="text-base sm:text-lg text-slate-300 mt-2 leading-relaxed">
+        El análisis sintáctico impone estructura jerárquica sobre los tokens. Estudio exhaustivo del funcionamiento interno de la pila (LIFO) en analizadores LL y LR, eliminación formal de la recursividad izquierda y traducción dirigida por la sintaxis.
+      </p>
+
+      <div class="mt-4 p-3 bg-[#080d1a] rounded-lg border border-slate-800 text-xs font-mono text-slate-300 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <span class="text-cyan-400 font-bold">Respaldo Bibliográfico:</span>
+          <span>Ing. Mario Ramírez Tobar • "Traducción Dirigida por la sintaxis" (pág. 1-705).</span>
+        </div>
+        <a href="/bibliografia#ref-sdd-tipos-pdf" class="text-purple-400 hover:underline">Ver referencias ↗</a>
+      </div>
+    </div>
+
+    <!-- 1. Gramáticas Libres de Contexto y Derivaciones -->
+    <section id="gramaticas-glc" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">1.</span> Gramáticas Libres de Contexto (GLC) y Derivaciones
+      </h2>
+
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
+        Una <strong>Gramática Libre de Contexto (GLC)</strong> es una 4-tupla matemática formal definida como $G = (V_N, V_T, P, S)$, donde:
+      </p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 my-4 text-xs font-mono">
+        <div class="p-3 bg-[#0d1527] rounded-lg border border-slate-800">
+          <strong class="text-cyan-400 block mb-1">$V_N$ (No Terminales)</strong>
+          <span class="text-slate-400">Variables sintácticas que representan conjuntos de cadenas (ej. $E, T, F$).</span>
+        </div>
+        <div class="p-3 bg-[#0d1527] rounded-lg border border-slate-800">
+          <strong class="text-purple-400 block mb-1">$V_T$ (Terminales)</strong>
+          <span class="text-slate-400" set:html={`Símbolos básicos del alfabeto que coinciden con los tokens (ej. ${renderLatex('+ , * , \\text{num}')}).`} />
+        </div>
+        <div class="p-3 bg-[#0d1527] rounded-lg border border-slate-800">
+          <strong class="text-amber-300 block mb-1">$P$ (Producciones)</strong>
+          <span class="text-slate-400">Reglas de sustitución de la forma $A \to \alpha$, donde $A \in V_N$ y $\alpha \in (V_N \cup V_T)^*$.</span>
+        </div>
+        <div class="p-3 bg-[#0d1527] rounded-lg border border-slate-800">
+          <strong class="text-emerald-400 block mb-1">$S$ (Axioma Inicial)</strong>
+          <span class="text-slate-400">Símbolo no terminal distinguido $S \in V_N$ desde donde parten las derivaciones.</span>
+        </div>
+      </div>
+
+      <div class="prose text-sm sm:text-base text-slate-300 leading-relaxed space-y-2 font-sans">
+        <p>
+          Una <strong>derivación</strong> es una secuencia de sustituciones que parte del símbolo inicial $S$ y aplica producciones hasta llegar a una cadena compuesta exclusivamente por terminales.
+        </p>
+        <ul class="list-disc list-inside space-y-1 pl-2 text-white">
+          <li><strong>Derivación por la izquierda (Leftmost):</strong> En cada paso se expande siempre el no terminal situado más a la izquierda. Es el orden natural del análisis descendente (LL).</li>
+          <li><strong>Derivación por la derecha (Rightmost / Canónica):</strong> En cada paso se expande siempre el no terminal situado más a la derecha. El análisis ascendente (LR) reconstruye la derivación canónica por la derecha en orden inverso (reducción de mango).</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 2. Árboles sintácticos y Ambigüedad -->
+    <section id="arboles-ambiguedad" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">2.</span> Árboles de Derivación y el Problema de la Ambigüedad
+      </h2>
+
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
+        Una gramática se denomina <strong>ambigua</strong> si existe al menos una cadena de entrada para la cual pueden construirse <em>dos o más árboles de derivación distintos</em> (o equivalentemente, dos derivaciones por la izquierda diferentes).
+      </p>
+
+      <div class="bg-[#080d1a] p-4 rounded-xl border border-rose-500/30 space-y-3 text-xs font-mono">
+        <h4 class="text-rose-300 font-bold uppercase">Ejemplo de Gramática Ambigua de Expresiones</h4>
+        <p class="text-white" set:html={renderLatex('E \\to E + E \\mid E * E \\mid \\text{num}')} />
+        <p class="text-slate-400 font-sans">
+          Para la cadena <code class="text-cyan-400">2 + 3 * 4</code>, esta gramática permite dos árboles con resultados semánticos incompatibles:
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-sans">
+          <div class="p-3 bg-[#0d1527] rounded border border-slate-800">
+            <strong class="text-rose-400 block mb-1">Árbol 1 (Interpretación Errónea):</strong>
+            <p class="text-slate-400 font-mono">$(2 + 3) * 4 = 20$</p>
+            <p class="text-slate-400">Coloca el $+$ más profundo en el árbol, asignándole mayor precedencia que a la multiplicación.</p>
+          </div>
+          <div class="p-3 bg-[#0d1527] rounded border border-slate-800">
+            <strong class="text-emerald-400 block mb-1">Árbol 2 (Interpretación Correcta):</strong>
+            <p class="text-slate-400 font-mono">$2 + (3 * 4) = 14$</p>
+            <p class="text-slate-400">Coloca el $*$ en el subárbol inferior, garantizando precedencia matemática estándar.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Eliminación de Recursividad Izquierda -->
+    <section id="recursividad-izquierda" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">3.</span> Eliminación de Recursividad Izquierda (Mario Ramírez Tobar)
+      </h2>
+
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
+        En las páginas 310 a 379 de su cátedra, el Ing. Mario Ramírez Tobar explica por qué la recursividad izquierda es fatal para analizadores descendentes:
+      </p>
+
+      <blockquote class="p-4 bg-[#080d1a] border-l-4 border-amber-400 text-xs font-mono text-white italic leading-relaxed rounded-r-lg my-3">
+        "¿Por qué eliminarlo? Porque ninguna gramática con recursividad por la izquierda puede analizarse sintácticamente en forma determinista: parseE() invocaría a parseE() infinitamente sin consumir símbolos de entrada. Para reconocer E, primero necesita reconocer E... que a su vez necesita reconocer E..."
+      </blockquote>
+
+      <div class="bg-[#0d1527] p-5 rounded-xl border border-slate-800 space-y-3">
+        <h3 class="text-sm font-bold text-cyan-400 font-mono">La Regla Canónica de Transformación</h3>
+        <p class="text-sm sm:text-base text-slate-300">
+          Dadas las producciones recursivas por la izquierda:
+        </p>
+        <div class="p-3 bg-[#080d1a] rounded font-mono text-xs text-white text-center" set:html={renderLatex('A \\to A \\alpha \\mid \\beta \\quad (\\text{donde } \\beta \\text{ no empieza con } A)', true)} />
+        <p class="text-sm sm:text-base text-slate-300">
+          Se sustituyen por producciones equivalentes usando un nuevo no terminal $R$ (o $A'$):
+        </p>
+        <div class="p-3 bg-[#080d1a] rounded font-mono text-xs text-emerald-300 text-center">
+          $A \to \beta R$ <br />
+          $R \to \alpha R \mid \varepsilon$
+        </div>
+
+        <div class="mt-4 p-3 bg-amber-950/30 border border-amber-500/40 rounded-lg text-xs">
+          <strong class="text-amber-300 block mb-1">¡Principio Clave con Acciones Semánticas! (pág. 329):</strong>
+          <p class="text-slate-300">
+            "Al transformar la gramática, <strong>trate a las acciones como si fueran símbolos terminales</strong>. El truco es considerar toda la acción como parte del sufijo $\alpha$."
+          </p>
+        </div>
+      </div>
+
+      <!-- Ejemplo del PDF desarrollado paso a paso -->
+      <div class="bg-[#080d1a] p-5 rounded-xl border border-slate-800 space-y-3 font-mono text-xs">
+        <h4 class="text-white font-bold">Ejemplo Resuelto del PDF de Cátedra:</h4>
+        <div class="text-cyan-400">
+          Gramática original con acción semántica:<br />
+          <span set:html={renderLatex('E \\to E + T \\;\\{\\text{print}(+) \\} \\mid T')} />
+        </div>
+        <div class="text-slate-400 pl-4 border-l-2 border-slate-800 space-y-1">
+          <p>Identificación de componentes:</p>
+          <p set:html={renderLatex('\\alpha = + T \\;\\{\\text{print}(+) \\}')} />
+          <p set:html={renderLatex('\\beta = T')} />
+        </div>
+        <div class="text-emerald-300">
+          Gramática transformada sin recursividad izquierda:<br />
+          <span set:html={renderLatex('E \\to T R')} /><br />
+          <span set:html={renderLatex('R \\to + T \\;\\{\\text{print}(+) \\} R \\mid \\varepsilon')} />
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Factorización Izquierda -->
+    <section id="factorizacion-izquierda" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">4.</span> Factorización Izquierda
+      </h2>
+
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
+        Cuando dos o más producciones de un mismo no terminal comparten un prefijo común:
+        $$A \to \alpha \beta_1 \mid \alpha \beta_2$$
+        Un analizador descendente predictivo no puede saber qué producción seleccionar al ver el primer terminal de $\alpha$. La <strong>factorización izquierda</strong> pospone la decisión hasta que se haya consumido el prefijo común:
+        $$A \to \alpha A'$$
+        $$A' \to \beta_1 \mid \beta_2$$
+      </p>
+    </section>
+
+    <!-- 5. El Funcionamiento LIFO del Stack en LL y LR -->
+    <section id="stack-analizadores" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">5.</span> El Funcionamiento LIFO del Stack en LL y LR (Mario Ramírez Tobar)
+      </h2>
+
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
+        En las páginas 380 a 547 del PDF, el Ing. Mario Ramírez Tobar describe la pila como el motor central que gobierna los analizadores sintácticos:
+      </p>
+
+      <blockquote class="p-4 bg-[#080d1a] border-l-4 border-cyan-500/40 text-xs font-mono text-white italic leading-relaxed rounded-r-lg my-3">
+        "El Stack es una estructura de datos LIFO (último en entrar, primero en salir) que almacena estados y símbolos gramaticales. Controla el progreso del análisis, guía la toma de decisiones del autómata y asegura el orden jerárquico del código fuente."
+      </blockquote>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-6">
+        <!-- Trace LL -->
+        <div class="bg-[#0d1527] p-4 rounded-xl border border-cyan-500/40 space-y-3">
+          <span class="text-xs font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 font-bold">
+            PILA EN ANALIZADORES LL (Descendentes)
+          </span>
+          <p class="text-sm text-slate-400 font-sans">
+            Almacena los símbolos que <strong>aún faltan por predecir y emparejar</strong> de la gramática. El símbolo en el tope de la pila se expande por una producción o se empareja con la entrada.
+          </p>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs font-mono min-w-[520px]">
+              <thead class="bg-[#080d1a] text-white">
+                <tr>
+                  <th class="p-2">Pila LL</th>
+                  <th class="p-2">Entrada</th>
+                  <th class="p-2">Acción</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60 text-slate-300">
+                <tr>
+                  <td class="p-2 text-cyan-400">[E, $]</td>
+                  <td class="p-2">n + n$</td>
+                  <td class="p-2">Inicio</td>
+                </tr>
+                <tr>
+                  <td class="p-2 text-cyan-400">[T, R, $]</td>
+                  <td class="p-2">n + n$</td>
+                  <td class="p-2 text-amber-300">Derivar (E -> TR)</td>
+                </tr>
+                <tr>
+                  <td class="p-2 text-cyan-400">[n, R, $]</td>
+                  <td class="p-2">n + n$</td>
+                  <td class="p-2 text-amber-300">Derivar (T -> n)</td>
+                </tr>
+                <tr>
+                  <td class="p-2 text-cyan-400">[R, $]</td>
+                  <td class="p-2">+ n$</td>
+                  <td class="p-2 text-emerald-400 font-bold">Emparejar 'n'</td>
+                </tr>
+                <tr>
+                  <td class="p-2 text-cyan-400">[+, T, R, $]</td>
+                  <td class="p-2">+ n$</td>
+                  <td class="p-2 text-amber-300">Derivar (R -> +TR)</td>
+                </tr>
+                <tr>
+                  <td class="p-2 text-cyan-400">[T, R, $]</td>
+                  <td class="p-2">n$</td>
+                  <td class="p-2 text-emerald-400 font-bold">Emparejar '+'</td>
+                </tr>
+                <tr>
+                  <td class="p-2 text-cyan-400">[n, R, $]</td>
+                  <td class="p-2">n$</td>
+                  <td class="p-2 text-amber-300">Derivar (T -> n)</td>
+                </tr>
+                <tr>
+                  <td class="p-2 text-cyan-400">[R, $]</td>
+                  <td class="p-2">$</td>
+                  <td class="p-2 text-emerald-400 font-bold">Emparejar 'n'</td>
+                </tr>
+                <tr>
+                  <td class="p-2 text-cyan-400">[$]</td>
+                  <td class="p-2">$</td>
+                  <td class="p-2 text-amber-300">Derivar (R -> e)</td>
+                </tr>
+                <tr class="bg-emerald-950/40 text-emerald-300 font-bold">
+                  <td class="p-2">[$]</td>
+                  <td class="p-2">$</td>
+                  <td class="p-2">¡Aceptar!</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Trace LR -->
+        <div class="bg-[#0d1527] p-4 rounded-xl border border-purple-500/40/40 space-y-3">
+          <span class="text-xs font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold">
+            PILA EN ANALIZADORES LR (Ascendentes)
+          </span>
+          <p class="text-sm text-slate-400 font-sans">
+            Guarda una combinación de <strong>estados y símbolos ya leídos</strong> mientras espera encontrar un mango (handle) para reducir según una regla $A \to \alpha$.
+          </p>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs font-mono min-w-[520px]">
+              <thead class="bg-[#080d1a] text-white">
+                <tr>
+                  <th class="p-2">Pila LR</th>
+                  <th class="p-2">Entrada</th>
+                  <th class="p-2">Acción</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800/60 text-slate-300">
+                <tr>
+                  <td class="p-2 text-purple-400">[$]</td>
+                  <td class="p-2">n + n$</td>
+                  <td class="p-2">Inicio</td>
+                </tr>
+                <tr>
+                  <td class="p-2 text-purple-400">[$, n]</td>
+                  <td class="p-2">+ n$</td>
+                  <td class="p-2 text-cyan-400 font-bold">Shift (Desplazar)</td>
+                </tr>
+                <tr>
+                  <td class="p-2 text-purple-400">[$, T]</td>
+                  <td class="p-2">+ n$</td>
+                  <td class="p-2 text-amber-300">Reduce (T -> n)</td>
+                </tr>
+                <tr>
+                  <td class="p-2 text-purple-400">[$, E]</td>
+                  <td class="p-2">+ n$</td>
+                  <td class="p-2 text-amber-300">Reduce (E -> T)</td>
+                </tr>
+                <tr>
+                  <td class="p-2 text-purple-400">[$, E, +]</td>
+                  <td class="p-2">n$</td>
+                  <td class="p-2 text-cyan-400 font-bold">Shift (Desplazar)</td>
+                </tr>
+                <tr>
+                  <td class="p-2 text-purple-400">[$, E, +, n]</td>
+                  <td class="p-2">$</td>
+                  <td class="p-2 text-cyan-400 font-bold">Shift (Desplazar)</td>
+                </tr>
+                <tr>
+                  <td class="p-2 text-purple-400">[$, E, +, T]</td>
+                  <td class="p-2">$</td>
+                  <td class="p-2 text-amber-300">Reduce (T -> n)</td>
+                </tr>
+                <tr>
+                  <td class="p-2 text-purple-400">[$, E]</td>
+                  <td class="p-2">$</td>
+                  <td class="p-2 text-amber-300">Reduce (E -> E + T)</td>
+                </tr>
+                <tr class="bg-emerald-950/40 text-emerald-300 font-bold">
+                  <td class="p-2">[$, E]</td>
+                  <td class="p-2">$</td>
+                  <td class="p-2">¡Aceptar!</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Definiciones Dirigidas por la Sintaxis (DDS) y Esquemas (EDT) -->
+    <section id="sdd-sdt" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">6.</span> Definiciones Dirigidas por la Sintaxis (DDS) y Esquemas (EDT)
+      </h2>
+
+      <div class="prose text-sm sm:text-base text-slate-300 leading-relaxed space-y-3 font-sans">
+        <p>
+          Una <strong>Definición Dirigida por la Sintaxis (DDS / SDD)</strong> asocia atributos a los símbolos gramaticales y reglas semánticas a las producciones. Se clasifican formalmente en:
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4 font-sans text-xs">
+          <div class="p-4 bg-[#0d1527] rounded-xl border border-cyan-500/40">
+            <h3 class="font-bold text-cyan-400 font-mono mb-2">Definiciones S-Atribuidas</h3>
+            <p class="text-slate-400 leading-relaxed">
+              Contienen <strong>únicamente atributos sintetizados</strong>. El valor del atributo de un nodo padre se calcula exclusivamente a partir de los atributos de sus nodos hijos. Se evalúan mediante un recorrido del árbol en <em>post-orden</em> y son ideales para analizadores ascendentes (LR) ejecutando la acción al momento de reducir.
+            </p>
+          </div>
+
+          <div class="p-4 bg-[#0d1527] rounded-xl border border-purple-500/40/40">
+            <h3 class="font-bold text-purple-400 font-mono mb-2">Definiciones L-Atribuidas</h3>
+            <p class="text-slate-400 leading-relaxed">
+              Pueden contener <strong>atributos heredados</strong> además de sintetizados. Un atributo heredado de un símbolo en el cuerpo de una producción solo puede depender de los atributos de los símbolos situados <em>a su izquierda</em> o de los atributos heredados del encabezado. Se evalúan en un recorrido en <em>pre-orden</em> de arriba hacia abajo (LL).
+            </p>
+          </div>
+        </div>
+
+        <div class="p-4 bg-[#080d1a] rounded-xl border border-slate-800 space-y-2 font-mono text-xs">
+          <h4 class="text-amber-300 font-bold uppercase">Acciones Incrustadas en Analizadores LR (Marcadores):</h4>
+          <p class="text-slate-400 font-sans" set:html={`Si una producción tiene una acción semántica intermedia como ${renderLatex('A \\to X \\;\\{a\\} \\; Y')}, el compilador introduce un no terminal marcador ${renderLatex('M \\to \\varepsilon')}, transformando la producción en:`} />
+          <div class="p-2 bg-[#0d1527] text-emerald-300 text-center rounded" set:html={renderLatex('A \\to X M Y, \\quad M \\to \\varepsilon \\;\\{a\\}')} />
+          <p class="text-slate-400 font-sans">
+            Así, en el analizador LR la acción se ejecuta de forma natural cuando el parser reduce mediante la producción vacía de M.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Navegación entre módulos -->
+    <div class="pt-8 border-t border-slate-800 flex items-center justify-between font-mono text-xs">
+      <a href="/modulo/2-analisis-lexico" class="px-4 py-2 rounded-lg bg-[#0d1527] hover:bg-slate-900 text-slate-400 hover:text-white transition">
+        ◀ Anterior: Módulo 2 (Léxico)
+      </a>
+      <a href="/modulo/4-analisis-semantico" class="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-600 hover:bg-gradient-to-r from-purple-500 to-indigo-600/80 text-white font-bold transition flex items-center gap-2">
+        <span>Siguiente: Módulo 4 (Semántico)</span>
+        <span>▶</span>
+      </a>
+    </div>
+  </div>
+</MainLayout>

@@ -1,0 +1,23 @@
+---
+// Barra de progreso de lectura superior con gradiente Cyan -> Azulito -> Morado
+---
+
+<div id="reading-progress-container" class="fixed top-0 left-0 w-full h-1 z-50 bg-[#070a13]">
+  <div id="reading-progress-bar" class="h-full bg-gradient-to-r from-cyan-400 via-sky-400 to-purple-500 w-0 transition-all duration-150 shadow-[0_0_8px_rgba(34,211,238,0.7)]"></div>
+</div>
+
+<script>
+  function updateProgress() {
+    const winScroll = document.documentElement.scrollTop || document.body.scrollTop;
+    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    const scrolled = height > 0 ? (winScroll / height) * 100 : 0;
+    const bar = document.getElementById('reading-progress-bar');
+    if (bar) {
+      bar.style.width = scrolled + '%';
+    }
+  }
+
+  window.addEventListener('scroll', updateProgress, { passive: true });
+  window.addEventListener('resize', updateProgress);
+  document.addEventListener('astro:page-load', updateProgress);
+</script>

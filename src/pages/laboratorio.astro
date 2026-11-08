@@ -1,0 +1,124 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import FullPipelineLab from '../components/lab/FullPipelineLab.vue';
+import ExpressionAnalyzer from '../components/lab/ExpressionAnalyzer.vue';
+import TacGenerator from '../components/lab/TacGenerator.vue';
+import PipelineSimulator from '../components/lab/PipelineSimulator.vue';
+import RiscvSimulator from '../components/lab/RiscvSimulator.vue';
+import QuizExercises from '../components/lab/QuizExercises.vue';
+---
+
+<MainLayout
+  title="Laboratorio Interactivo de Compiladores"
+  description="Entorno experimental completo: simulador Java a RISC-V con POO y recursión, C3D, cuartetas, analizador léxico/AST y máquina virtual RV32I."
+>
+  <div class="space-y-16">
+    <!-- Encabezado del Laboratorio -->
+    <div class="border-b border-slate-800 pb-8">
+      <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono font-bold bg-purple-950/60 text-purple-300 border border-purple-500/30 mb-3 shadow-[0_0_15px_rgba(168,85,247,0.25)]">
+        <span>⚡</span>
+        <span>ENTORNO EXPERIMENTAL Y COMPILADOR EN VIVO</span>
+      </div>
+      <h1 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
+        Laboratorio Interactivo de Compiladores
+      </h1>
+      <p class="text-sm sm:text-lg text-slate-300 mt-3 leading-relaxed font-sans max-w-4xl">
+        Experimente de primera mano con cada una de las fases del proceso de compilación: escriba código estilo Java con clases, puntero <code class="text-cyan-300 font-bold">this</code> en el Heap y llamadas recursivas, y observe en tiempo real su transformación a Código Intermedio (C3D), Cuartetas y Ensamblador RISC-V RV32I con Frame Pointer.
+      </p>
+
+      <!-- Accesos directos a los laboratorios -->
+      <div class="flex flex-wrap gap-2.5 mt-6 text-xs sm:text-sm font-mono">
+        <a href="#compilador-completo" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-950/60 to-cyan-950/60 hover:from-purple-900/70 hover:to-cyan-900/70 border border-cyan-500/40 text-cyan-200 font-bold transition shadow-sm">
+          🚀 1. Compilador Java ➔ C3D ➔ RISC-V (POO & Recursión)
+        </a>
+        <a href="#expresiones" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500/40 text-slate-200 hover:text-cyan-300 transition">
+          2. Analizador Léxico & AST
+        </a>
+        <a href="#c3d" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-purple-500/40 text-slate-200 hover:text-purple-300 transition">
+          3. Generador C3D & Cuádruplas
+        </a>
+        <a href="#pipeline" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500/40 text-slate-200 hover:text-cyan-300 transition">
+          4. Simulador Multi-Etapa
+        </a>
+        <a href="#riscv" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-sky-500/40 text-slate-200 hover:text-sky-300 transition">
+          5. Máquina Virtual RISC-V & Pila
+        </a>
+        <a href="#ejercicios" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-emerald-500/40 text-slate-200 hover:text-emerald-300 transition">
+          6. Autoevaluación
+        </a>
+      </div>
+    </div>
+
+    <!-- 1. COMPILADOR COMPLETO: JAVA -> C3D -> CUARTETAS -> RISC-V (POO, RECURSIÓN, FUNCIONES) -->
+    <section id="compilador-completo" class="scroll-mt-24 space-y-4">
+      <div class="border-b border-slate-800/80 pb-3">
+        <span class="text-xs font-mono font-bold text-cyan-400 uppercase tracking-wider">Herramienta Principal • Pipeline Integral</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white mt-1">Compilador Interactivo Java ➔ C3D ➔ Cuartetas ➔ RISC-V</h2>
+        <p class="text-sm text-slate-400 mt-1.5 leading-relaxed">
+          Diseñado para comprender cómo los compiladores procesan Programación Orientada a Objetos (atributos en Heap y puntero `this` en `a0`), funciones recursivas con preservación de marco en la pila y funciones con múltiples argumentos.
+        </p>
+      </div>
+      <FullPipelineLab client:load />
+    </section>
+
+    <!-- 2. Analizador de Expresiones y AST -->
+    <section id="expresiones" class="scroll-mt-24 space-y-4">
+      <div class="border-b border-slate-800/80 pb-3">
+        <span class="text-xs font-mono font-bold text-purple-400 uppercase tracking-wider">Herramienta 2 • Front-End</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white mt-1">Analizador Léxico & Árbol Sintáctico (AST)</h2>
+        <p class="text-sm text-slate-400 mt-1.5">
+          Escriba cualquier expresión aritmética o lógica para observar cómo el escáner identifica los lexemas y el analizador construye el AST jerárquico.
+        </p>
+      </div>
+      <ExpressionAnalyzer client:load />
+    </section>
+
+    <!-- 3. Generador C3D y Cuádruplas -->
+    <section id="c3d" class="scroll-mt-24 space-y-4">
+      <div class="border-b border-slate-800/80 pb-3">
+        <span class="text-xs font-mono font-bold text-cyan-400 uppercase tracking-wider">Herramienta 3 • Representación Intermedia</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white mt-1">Generador de Código de Tres Direcciones (C3D), Cuartetos y Tripletas</h2>
+        <p class="text-sm text-slate-400 mt-1.5">
+          Transforme sentencias imperativas a la forma canónica de C3D respetando el principio de máximo 3 direcciones de memoria simultáneas.
+        </p>
+      </div>
+      <TacGenerator client:load />
+    </section>
+
+    <!-- 4. Simulador de Traducción Multi-Etapa -->
+    <section id="pipeline" class="scroll-mt-24 space-y-4">
+      <div class="border-b border-slate-800/80 pb-3">
+        <span class="text-xs font-mono font-bold text-sky-400 uppercase tracking-wider">Herramienta 4 • Arquitectura Global</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white mt-1">Simulador de Pipeline de Compilación</h2>
+        <p class="text-sm text-slate-400 mt-1.5">
+          Recorra las 6 fases del compilador paso a paso, examinando las estructuras de datos que se construyen en cada etapa.
+        </p>
+      </div>
+      <PipelineSimulator client:load />
+    </section>
+
+    <!-- 5. Laboratorio RISC-V y Frame Pointer -->
+    <section id="riscv" class="scroll-mt-24 space-y-4">
+      <div class="border-b border-slate-800/80 pb-3">
+        <span class="text-xs font-mono font-bold text-purple-400 uppercase tracking-wider">Herramienta 5 • Back-End & Arquitectura</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white mt-1">Máquina Virtual RISC-V RV32I & Frame Pointer Stack</h2>
+        <p class="text-sm text-slate-400 mt-1.5">
+          Simule la ejecución de programas en ensamblador con la convención del Ing. Mario Ramírez Tobar: registros ABI, pila con offsets `-offset(fp)` y memoria Heap para objetos.
+        </p>
+      </div>
+      <RiscvSimulator client:load />
+    </section>
+
+    <!-- 6. Banco de Ejercicios -->
+    <section id="ejercicios" class="scroll-mt-24 space-y-4">
+      <div class="border-b border-slate-800/80 pb-3">
+        <span class="text-xs font-mono font-bold text-emerald-400 uppercase tracking-wider">Herramienta 6 • Evaluación</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white mt-1">Banco Progresivo de Ejercicios y Autoevaluación</h2>
+        <p class="text-sm text-slate-400 mt-1.5">
+          Ponga a prueba su dominio con ejercicios teóricos, deducción de tokens, análisis sintáctico y código RISC-V.
+        </p>
+      </div>
+      <QuizExercises client:load />
+    </section>
+  </div>
+</MainLayout>

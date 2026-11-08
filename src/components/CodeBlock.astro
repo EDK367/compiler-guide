@@ -1,0 +1,60 @@
+---
+interface Props {
+  code: string;
+  lang?: string;
+  title?: string;
+}
+
+const { code, lang = 'c', title } = Astro.props;
+---
+
+<div class="my-5 rounded-2xl border border-slate-800 bg-[#080d1a] overflow-hidden shadow-xl font-mono text-sm">
+  {title && (
+    <div class="flex items-center justify-between px-4 py-2.5 bg-[#0d1527] border-b border-slate-800 text-slate-200">
+      <span class="font-bold flex items-center gap-2.5 text-xs sm:text-sm truncate mr-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)] shrink-0"></span>
+        <span class="truncate">{title}</span>
+      </span>
+      <span class="text-xs uppercase font-bold text-cyan-300 tracking-wider px-2.5 py-0.5 rounded-md bg-cyan-950/40 border border-cyan-500/30 shrink-0">
+        {lang}
+      </span>
+    </div>
+  )}
+
+  <div class="relative group">
+    <pre class="p-4 sm:p-5 overflow-x-auto text-slate-200 leading-relaxed select-text font-mono text-xs sm:text-sm"><code>{code.trim()}</code></pre>
+    
+    <button
+      type="button"
+      class="copy-btn absolute top-3 right-3 px-3 py-1.5 rounded-lg bg-slate-800/90 hover:bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 text-xs font-mono opacity-80 sm:opacity-0 group-hover:opacity-100 transition cursor-pointer shadow-md"
+      data-code={code}
+    >
+      Copiar
+    </button>
+  </div>
+</div>
+
+<script>
+  function attachCopy() {
+    document.querySelectorAll('.copy-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const text = btn.getAttribute('data-code') || '';
+        try {
+          await navigator.clipboard.writeText(text);
+          const original = btn.textContent;
+          btn.textContent = '¡Copiado! ✓';
+          btn.classList.add('text-green-400', 'border-green-500/50');
+          setTimeout(() => {
+            btn.textContent = original;
+            btn.classList.remove('text-green-400', 'border-green-500/50');
+          }, 1800);
+        } catch (e) {
+          console.error(e);
+        }
+      });
+    });
+  }
+
+  attachCopy();
+  document.addEventListener('astro:page-load', attachCopy);
+</script>

@@ -1,0 +1,350 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+import CodeBlock from '../../components/CodeBlock.astro';
+import ExpressionAnalyzer from '../../components/lab/ExpressionAnalyzer.vue';
+import { renderLatex } from '../../utils/katexRenderer';
+---
+
+<MainLayout
+  title="Módulo 2: Análisis Léxico"
+  description="Tokens, lexemas, patrones, expresiones regulares, autómatas finitos AFD/AFND, algoritmos de Thompson y Subconjuntos, y manejo de errores léxicos."
+  currentSlug="2-analisis-lexico"
+>
+  <div class="space-y-12">
+    <!-- Cabecera del Módulo -->
+    <div class="border-b border-slate-800 pb-6">
+      <div class="flex items-center gap-2 mb-2 font-mono text-xs">
+        <span class="px-2.5 py-0.5 rounded bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold">MÓDULO 2</span>
+        <span class="text-slate-400">Front-End • Fase de Escaneo</span>
+      </div>
+      <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+        Análisis Léxico: Tokens, Patrones y Autómatas Finitos
+      </h1>
+      <p class="text-base sm:text-lg text-slate-300 mt-2 leading-relaxed">
+        El analizador léxico (escáner) es la primera línea de contacto con el código fuente. Su misión es transformar un flujo continuo de caracteres no estructurados en una secuencia coherente de tokens tipados y referenciados a la tabla de símbolos.
+      </p>
+
+      <div class="mt-4 p-3 bg-[#080d1a] rounded-lg border border-slate-800 text-xs font-mono text-slate-300 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div>
+          <span class="text-cyan-400 font-bold">Respaldo Bibliográfico:</span>
+          <span>Ing. Mario Ramírez Tobar • "Traducción Dirigida por la sintaxis" (pág. 718-732).</span>
+        </div>
+        <a href="/bibliografia#ref-sdd-tipos-pdf" class="text-purple-400 hover:underline">Ver referencias ↗</a>
+      </div>
+    </div>
+
+    <!-- 1. Tokens, Lexemas y Patrones -->
+    <section id="tokens-lexemas-patrones" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">1.</span> Tokens, Lexemas y Patrones: Definiciones Formales
+      </h2>
+
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed">
+        Tal como expone el Ing. Mario Ramírez Tobar en la página 722 de su cátedra oficial:
+      </p>
+
+      <blockquote class="p-4 bg-[#080d1a] border-l-4 border-purple-500/40 text-xs font-mono text-white italic leading-relaxed my-3 rounded-r-lg">
+        "A la primera fase de un compilador se le llama análisis léxico o escaneo. El analizador de léxico lee el flujo de caracteres que componen el programa fuente y los agrupa en secuencias significativas, conocidas como lexemas. Para cada lexema, el analizador léxico produce como salida un token de la forma: &lt;nombre-token, valor-atributo&gt; que pasa a la fase siguiente."
+      </blockquote>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 my-6 text-xs font-sans">
+        <div class="p-4 bg-[#0d1527] rounded-xl border border-slate-800">
+          <span class="text-xs font-mono uppercase tracking-wider text-cyan-400 font-bold block mb-1">Concepto 1</span>
+          <h3 class="text-sm font-bold text-white mb-2 font-mono">Token</h3>
+          <p class="text-slate-400 leading-relaxed">
+            Es un símbolo abstracto terminal que representa una categoría gramatical (ej. <code class="text-cyan-400">ID</code>, <code class="text-cyan-400">NUM_INT</code>, <code class="text-cyan-400">IF</code>, <code class="text-cyan-400">ASIGNACION</code>). El analizador sintáctico opera únicamente sobre los nombres de los tokens.
+          </p>
+        </div>
+
+        <div class="p-4 bg-[#0d1527] rounded-xl border border-slate-800">
+          <span class="text-xs font-mono uppercase tracking-wider text-purple-400 font-bold block mb-1">Concepto 2</span>
+          <h3 class="text-sm font-bold text-white mb-2 font-mono">Lexema</h3>
+          <p class="text-slate-400 leading-relaxed">
+            Es la secuencia concreta de caracteres textuales en el código fuente que coincide con el patrón de un token determinado (ej. <code class="text-purple-400">"posicion"</code>, <code class="text-purple-400">"60"</code>, <code class="text-purple-400">"while"</code>).
+          </p>
+        </div>
+
+        <div class="p-4 bg-[#0d1527] rounded-xl border border-slate-800">
+          <span class="text-xs font-mono uppercase tracking-wider text-amber-300 font-bold block mb-1">Concepto 3</span>
+          <h3 class="text-sm font-bold text-white mb-2 font-mono">Patrón</h3>
+          <p class="text-slate-400 leading-relaxed">
+            Es la regla formal, expresada habitualmente como una expresión regular, que describe el conjunto de todas las cadenas posibles que pueden formar los lexemas de ese token.
+          </p>
+        </div>
+      </div>
+
+      <!-- Ejemplo del PDF de Mario Ramírez Tobar -->
+      <div class="bg-[#080d1a] p-4 rounded-xl border border-slate-800 space-y-3">
+        <h4 class="text-xs font-mono font-bold text-white uppercase tracking-wider">
+          Ejemplo Canónico del Material de Cátedra: <code class="text-purple-400">posicion = inicial + velocidad * 60;</code>
+        </h4>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs font-mono min-w-[520px]">
+            <thead class="bg-slate-900 text-white">
+              <tr>
+                <th class="p-2 border-b border-slate-800">Lexema Fuente</th>
+                <th class="p-2 border-b border-slate-800">Token Emitido</th>
+                <th class="p-2 border-b border-slate-800">Valor de Atributo</th>
+                <th class="p-2 border-b border-slate-800">Patrón Asociado</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60 text-slate-400">
+              <tr>
+                <td class="p-2 font-bold text-white">posicion</td>
+                <td class="p-2 text-cyan-400">&lt;id, 1&gt;</td>
+                <td class="p-2">Puntero a Tabla de Símbolos (entrada 1)</td>
+                <td class="p-2">[a-zA-Z_][a-zA-Z0-9_]*</td>
+              </tr>
+              <tr>
+                <td class="p-2 font-bold text-white">=</td>
+                <td class="p-2 text-cyan-400">&lt;asignacion, _&gt;</td>
+                <td class="p-2">Sin atributo adicional</td>
+                <td class="p-2">=</td>
+              </tr>
+              <tr>
+                <td class="p-2 font-bold text-white">inicial</td>
+                <td class="p-2 text-cyan-400">&lt;id, 2&gt;</td>
+                <td class="p-2">Puntero a Tabla de Símbolos (entrada 2)</td>
+                <td class="p-2">[a-zA-Z_][a-zA-Z0-9_]*</td>
+              </tr>
+              <tr>
+                <td class="p-2 font-bold text-white">+</td>
+                <td class="p-2 text-cyan-400">&lt;op_suma, _&gt;</td>
+                <td class="p-2">Sin atributo adicional</td>
+                <td class="p-2">\+</td>
+              </tr>
+              <tr>
+                <td class="p-2 font-bold text-white">velocidad</td>
+                <td class="p-2 text-cyan-400">&lt;id, 3&gt;</td>
+                <td class="p-2">Puntero a Tabla de Símbolos (entrada 3)</td>
+                <td class="p-2">[a-zA-Z_][a-zA-Z0-9_]*</td>
+              </tr>
+              <tr>
+                <td class="p-2 font-bold text-white">*</td>
+                <td class="p-2 text-cyan-400">&lt;op_mult, _&gt;</td>
+                <td class="p-2">Sin atributo adicional</td>
+                <td class="p-2">\*</td>
+              </tr>
+              <tr>
+                <td class="p-2 font-bold text-white">60</td>
+                <td class="p-2 text-cyan-400">&lt;num, 60&gt;</td>
+                <td class="p-2">Valor entero evaluado: 60</td>
+                <td class="p-2">[0-9]+</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Expresiones Regulares -->
+    <section id="expresiones-regulares" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">2.</span> Álgebra de Expresiones Regulares
+      </h2>
+
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed">
+        Las expresiones regulares forman un lenguaje declarativo conciso para especificar los patrones de los tokens sobre un alfabeto $\Sigma$. Las operaciones fundamentales son:
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 my-4 text-xs font-mono">
+        <div class="p-3 bg-[#0d1527] rounded-lg border border-slate-800">
+          <strong class="text-cyan-400 block mb-1">Unión (Elección / Disyunción)</strong>
+          <p class="text-slate-400" set:html={renderLatex('r \\mid s = L(r) \\cup L(s)')} />
+          <span class="text-xs text-white block mt-1">Acepta cualquier cadena que pertenezca a r o a s.</span>
+        </div>
+        <div class="p-3 bg-[#0d1527] rounded-lg border border-slate-800">
+          <strong class="text-purple-400 block mb-1">Concatenación</strong>
+          <p class="text-slate-400" set:html={renderLatex('r s = \\{ xy \\mid x \\in L(r), y \\in L(s) \\}')} />
+          <span class="text-xs text-white block mt-1">Cadena formada por un prefijo de r seguido de s.</span>
+        </div>
+        <div class="p-3 bg-[#0d1527] rounded-lg border border-slate-800">
+          <strong class="text-amber-300 block mb-1">Clausura de Kleene</strong>
+          <p class="text-slate-400" set:html={renderLatex('r^* = \\bigcup_{i=0}^{\\infty} r^i')} />
+          <span class="text-xs text-white block mt-1">Cero o más repeticiones consecutivas de r. Incluye &epsilon;.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Autómatas Finitos: AFD vs AFND -->
+    <section id="automatas-finitos" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">3.</span> Autómatas Finitos: AFND y AFD
+      </h2>
+
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed">
+        Un autómata finito es una máquina de estados abstracta que reconoce si una cadena de entrada pertenece a un lenguaje regular. Se dividen formalmente en:
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4 text-xs font-sans">
+        <div class="p-4 bg-[#0d1527] rounded-xl border border-slate-800">
+          <h3 class="font-bold text-cyan-400 font-mono text-sm mb-2">Autómata Finito No Determinista (AFND)</h3>
+          <ul class="space-y-1.5 text-slate-400 list-disc list-inside">
+            <li>Puede contener <strong>transiciones vacías $\varepsilon$</strong> (cambia de estado sin consumir ningún símbolo de entrada).</li>
+            <li>Para un mismo par de estado y símbolo $(s, a)$, pueden existir <em>múltiples estados destino</em>.</li>
+            <li>Fácil de construir a partir de expresiones regulares mediante el Algoritmo de Thompson.</li>
+            <li>No se implementa directamente en software de alto rendimiento porque requiere explorar múltiples caminos en paralelo (backtracking).</li>
+          </ul>
+        </div>
+
+        <div class="p-4 bg-[#0d1527] rounded-xl border border-slate-800">
+          <h3 class="font-bold text-emerald-400 font-mono text-sm mb-2">Autómata Finito Determinista (AFD)</h3>
+          <ul class="space-y-1.5 text-slate-400 list-disc list-inside">
+            <li><strong>Cero transiciones $\varepsilon$:</strong> Toda transición consume exactamente un símbolo.</li>
+            <li>Para cada estado $s$ y símbolo $a \in \Sigma$, existe a lo sumo <strong>un único estado destino</strong> $\delta(s, a)$.</li>
+            <li>Se implementa en software en tiempo lineal $O(n)$ usando una simple matriz bidimensional de transiciones <code class="text-white">estado = tabla[estado][caracter]</code>.</li>
+            <li>Es el motor que impulsa analizadores léxicos como Lex, Flex y escáneres manuales eficientes.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Algoritmos de Construcción: Thompson y Subconjuntos -->
+    <section id="algoritmos-construccion" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">4.</span> De Expresión Regular a Código: Thompson y Subconjuntos
+      </h2>
+
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed">
+        El pipeline formal para construir un analizador léxico a partir de expresiones regulares sigue la secuencia matemática:
+      </p>
+
+      <div class="p-4 bg-[#080d1a] rounded-xl border border-slate-800 text-center font-mono text-sm sm:text-base text-white my-4">
+        Expresión Regular ➔ [Algoritmo de Thompson] ➔ AFND ➔ [Construcción de Subconjuntos] ➔ AFD ➔ [Minimización Hopcroft] ➔ AFD Mínimo
+      </div>
+
+      <div class="space-y-3 text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
+        <div class="p-3 bg-[#0d1527] rounded-lg border border-slate-800">
+          <strong class="text-cyan-400 font-mono block mb-1">Algoritmo de Thompson</strong>
+          <p class="text-slate-400">
+            Construye un AFND componiendo inductivamente sub-autómatas básicos para el símbolo vacío $\varepsilon$, literales individuales, unión, concatenación y clausura de Kleene. Garantiza que el autómata resultante tenga exactamente un único estado inicial y un único estado de aceptación.
+          </p>
+        </div>
+
+        <div class="p-3 bg-[#0d1527] rounded-lg border border-slate-800">
+          <strong class="text-purple-400 font-mono block mb-1">Construcción de Subconjuntos (Powerset Construction)</strong>
+          <p class="text-slate-400">
+            Convierte el AFND en un AFD donde cada estado del AFD representa un <em>conjunto de estados</em> del AFND. Utiliza dos operaciones matemáticas fundamentales:
+          </p>
+          <ul class="list-disc list-inside mt-2 text-white font-mono space-y-1 pl-2">
+            <li><strong>$\varepsilon$-clausura(s):</strong> Conjunto de estados alcanzables desde $s$ realizando exclusivamente transiciones vacías $\varepsilon$.</li>
+            <li><strong>mueve(T, a):</strong> Conjunto de estados a los que se puede transitar desde cualquier estado en el conjunto $T$ consumiendo el símbolo $a$.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Construcción Práctica del Analizador Léxico -->
+    <section id="construccion-lexer" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">5.</span> Implementación Práctica del Escáner
+      </h2>
+
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed">
+        En un compilador real, el escáner debe resolver dos problemas cruciales de desambiguación:
+      </p>
+
+      <ol class="list-decimal list-inside text-sm sm:text-base text-slate-300 space-y-2 my-2 font-sans">
+        <li>
+          <strong>Regla de coincidencia más larga (Longest Match / Maximal Munch):</strong> Si un prefijo coincide con varios patrones, el escáner siempre prefiere el lexema que consuma la mayor cantidad de caracteres consecutivos. Por ejemplo, <code class="text-cyan-400">==</code> se reconoce como un único operador relacional de igualdad y no como dos asignaciones <code class="text-cyan-400">=</code> seguidas.
+        </li>
+        <li>
+          <strong>Prioridad de palabras reservadas sobre identificadores:</strong> La palabra <code class="text-purple-400">while</code> coincide tanto con el patrón de identificador como con el de palabra clave. El compilador consulta una tabla hash de palabras reservadas tras extraer cada identificador; si existe en la tabla, emite el token específico de la palabra clave.
+        </li>
+      </ol>
+
+      <CodeBlock
+        title="Bucle principal de un escáner en código ejecutable"
+        lang="typescript"
+        code={`// Implementación modular del escáner
+export function scanNextToken(source: string, pos: number): Token {
+  // 1. Omitir espacios en blanco y comentarios
+  while (pos < source.length && isWhitespace(source[pos])) pos++;
+  if (pos >= source.length) return { type: 'EOF', value: '' };
+
+  const ch = source[pos];
+
+  // 2. Reconocimiento de Identificadores y Palabras Reservadas
+  if (isAlpha(ch)) {
+    let lexeme = '';
+    while (pos < source.length && isAlphaNumeric(source[pos])) {
+      lexeme += source[pos++];
+    }
+    // Verificación en tabla de palabras reservadas
+    const type = KEYWORDS.has(lexeme) ? 'KEYWORD' : 'IDENTIFIER';
+    return { type, value: lexeme };
+  }
+
+  // 3. Reconocimiento de Literales Numéricos
+  if (isDigit(ch)) {
+    let numStr = '';
+    while (pos < source.length && isDigit(source[pos])) {
+      numStr += source[pos++];
+    }
+    return { type: 'NUMBER', value: numStr };
+  }
+
+  // 4. Operadores de dos caracteres (==, !=, <=, >=, &&, ||)
+  const twoChars = source.slice(pos, pos + 2);
+  if (['==', '!=', '<=', '>=', '&&', '||'].includes(twoChars)) {
+    pos += 2;
+    return { type: 'OPERATOR', value: twoChars };
+  }
+
+  // 5. Delimitadores y operadores simples
+  return { type: 'DELIMITER', value: source[pos++] };
+}`}
+      />
+    </section>
+
+    <!-- 6. Manejo y Recuperación de Errores Léxicos -->
+    <section id="errores-lexicos" class="space-y-4 scroll-mt-20">
+      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+        <span class="text-cyan-400">6.</span> Manejo y Recuperación de Errores Léxicos
+      </h2>
+
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed">
+        Un error léxico se produce cuando el flujo de entrada presenta un carácter o secuencia que no puede ser emparejada por ningún patrón del lenguaje (por ejemplo, el símbolo <code class="text-rose-400">@</code> o <code class="text-rose-400">#</code> en un lenguaje que no los contempla, o una cadena de texto sin comilla de cierre).
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4 text-xs font-sans">
+        <div class="p-4 bg-[#0d1527] rounded-xl border border-slate-800">
+          <h3 class="font-bold text-purple-400 font-mono text-sm mb-2">Estrategia Modo Pánico (Panic Mode)</h3>
+          <p class="text-slate-400 leading-relaxed">
+            Es la técnica más extendida: cuando el escáner se topa con un carácter ilegal, emite un mensaje de error descriptivo con la línea y columna exactas, descarta el carácter defectuoso y reinicia el escaneo desde el carácter siguiente hasta encontrar un lexema válido.
+          </p>
+        </div>
+
+        <div class="p-4 bg-[#0d1527] rounded-xl border border-slate-800">
+          <h3 class="font-bold text-cyan-400 font-mono text-sm mb-2">Transformaciones de Recuperación</h3>
+          <ul class="space-y-1 text-slate-400 list-disc list-inside">
+            <li><strong>Eliminación:</strong> Suprimir caracteres extraños no reconocidos.</li>
+            <li><strong>Inserción:</strong> Insertar caracteres obligatorios faltantes (como cerrar una comilla antes del salto de línea).</li>
+            <li><strong>Sustitución:</strong> Reemplazar un carácter erróneo común por uno correcto.</li>
+            <li><strong>Transposición:</strong> Intercambiar dos caracteres contiguos adyacentes.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Laboratorio embebido en la página -->
+    <div class="my-8">
+      <div class="mb-3">
+        <span class="text-xs font-mono font-bold text-cyan-400 uppercase">Práctica en Vivo</span>
+        <h3 class="text-lg font-bold text-white">Experimente la Tokenización en el Laboratorio</h3>
+      </div>
+      <ExpressionAnalyzer client:visible />
+    </div>
+
+    <!-- Navegación entre módulos -->
+    <div class="pt-8 border-t border-slate-800 flex items-center justify-between font-mono text-xs">
+      <a href="/modulo/1-fundamentos" class="px-4 py-2 rounded-lg bg-[#0d1527] hover:bg-slate-900 text-slate-400 hover:text-white transition">
+        ◀ Anterior: Módulo 1 (Fundamentos)
+      </a>
+      <a href="/modulo/3-analisis-sintactico" class="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-600 hover:bg-gradient-to-r from-purple-500 to-indigo-600/80 text-white font-bold transition flex items-center gap-2">
+        <span>Siguiente: Módulo 3 (Sintáctico)</span>
+        <span>▶</span>
+      </a>
+    </div>
+  </div>
+</MainLayout>

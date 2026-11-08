@@ -1,0 +1,138 @@
+---
+import { MODULES } from '../data/modulesMeta';
+
+interface Props {
+  currentSlug?: string;
+}
+
+const { currentSlug = '' } = Astro.props;
+---
+
+<!-- Contenedor Responsivo: En móvil es un bloque colapsable/desplegable, en desktop es un sidebar sticky -->
+<aside class="w-full lg:w-80 shrink-0 bg-[#0a101f]/95 lg:bg-[#0a101f]/80 backdrop-blur-md border-b lg:border-b-0 lg:border-r border-slate-800/90 p-4 sm:p-6 lg:h-[calc(100vh-4.5rem)] lg:sticky lg:top-16 overflow-y-auto">
+  
+  <!-- Encabezado del Índice (con botón acordeón en móvil) -->
+  <div class="mb-4 pb-3 border-b border-slate-800/80 flex items-center justify-between">
+    <div class="flex items-center gap-2.5">
+      <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)] animate-pulse"></span>
+      <span class="text-sm font-mono uppercase tracking-wider text-slate-200 font-bold">Malla Curricular</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="text-xs font-mono px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 font-bold">
+        8 Módulos
+      </span>
+      <button
+        id="toggle-sidebar-mobile"
+        class="lg:hidden text-xs text-slate-300 hover:text-cyan-300 px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700/80"
+        aria-label="Expandir temario"
+      >
+        <span id="sidebar-toggle-text">Ver temario ▼</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Lista de Módulos (en móvil puede ocultarse por defecto para no tapar el contenido inicial) -->
+  <div id="sidebar-content" class="hidden lg:block space-y-2 text-sm font-sans">
+    <nav class="space-y-1.5">
+      {MODULES.map((m) => {
+        const isActive = currentSlug === m.slug;
+        return (
+          <div class="space-y-1">
+            <a
+              href={`/modulo/${m.slug}`}
+              class={`flex items-start gap-3 p-2.5 rounded-xl transition duration-200 group ${
+                isActive
+                  ? 'bg-gradient-to-r from-purple-950/70 via-slate-900 to-slate-900 text-white font-bold shadow-[0_0_18px_rgba(168,85,247,0.25)] border-l-4 border-cyan-400 border-r border-t border-b border-slate-800'
+                  : 'text-slate-300 hover:bg-slate-900/80 hover:text-cyan-300 border border-transparent hover:border-slate-800/80'
+              }`}
+            >
+              <span class={`font-mono text-xs px-2 py-0.5 rounded-md shrink-0 mt-0.5 font-bold ${
+                isActive
+                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
+                  : 'bg-slate-950 text-slate-400 border border-slate-800 group-hover:text-cyan-400'
+              }`}>
+                M{m.number}
+              </span>
+              <div class="flex-1 min-w-0">
+                <div class="truncate text-sm group-hover:translate-x-0.5 transition-transform">{m.shortTitle}</div>
+                <div class="text-xs font-mono text-slate-400 opacity-80 mt-0.5">{m.badge}</div>
+              </div>
+            </a>
+
+            <!-- Subtemas si es el módulo activo -->
+            {isActive && (
+              <div class="pl-6 pr-2 py-2 space-y-1.5 border-l-2 border-cyan-500/40 ml-4 font-mono text-xs bg-slate-950/40 rounded-r-xl my-1.5">
+                {m.topics.map((t) => (
+                  <a
+                    href={`#${t.id}`}
+                    class="block py-1 text-slate-400 hover:text-cyan-300 transition truncate leading-snug"
+                  >
+                    • {t.title}
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </nav>
+
+    <!-- Enlaces a Herramientas Especiales -->
+    <div class="mt-8 pt-5 border-t border-slate-800 space-y-2.5 font-mono text-sm">
+      <span class="text-xs uppercase tracking-wider text-slate-400 block font-bold mb-3">Herramientas & Práctica</span>
+      
+      <a
+        href="/laboratorio"
+        class="flex items-center gap-3 p-3 rounded-xl bg-purple-950/40 hover:bg-purple-900/50 border border-purple-500/40 text-purple-200 transition shadow-[0_0_15px_rgba(168,85,247,0.15)] group"
+      >
+        <span class="text-xl group-hover:scale-110 transition-transform">⚡</span>
+        <div class="flex-1 min-w-0">
+          <div class="font-bold text-purple-300 text-sm">Laboratorio Virtual</div>
+          <div class="text-xs text-purple-400/80">Compilador Java, C3D & RISC-V</div>
+        </div>
+      </a>
+
+      <a
+        href="/formulario"
+        class="flex items-center gap-3 p-3 rounded-xl bg-cyan-950/40 hover:bg-cyan-900/50 border border-cyan-500/40 text-cyan-200 transition shadow-[0_0_15px_rgba(6,182,212,0.15)] group"
+      >
+        <span class="text-xl group-hover:scale-110 transition-transform">📐</span>
+        <div class="flex-1 min-w-0">
+          <div class="font-bold text-cyan-300 text-sm">Formulario & Algoritmos</div>
+          <div class="text-xs text-cyan-400/80">Ecuaciones KaTeX & FIRST/FOLLOW</div>
+        </div>
+      </a>
+
+      <a
+        href="/bibliografia"
+        class="flex items-center gap-3 p-3 rounded-xl bg-slate-900/60 hover:bg-slate-900 border border-slate-800 text-slate-300 hover:text-white transition"
+      >
+        <span class="text-base">📚</span>
+        <span class="text-xs font-sans font-medium">Bibliografía & Fuentes</span>
+      </a>
+    </div>
+  </div>
+</aside>
+
+<script>
+  function setupSidebarAccordion() {
+    const btn = document.getElementById('toggle-sidebar-mobile');
+    const content = document.getElementById('sidebar-content');
+    const text = document.getElementById('sidebar-toggle-text');
+    if (btn && content && text) {
+      btn.addEventListener('click', () => {
+        const isHidden = content.classList.contains('hidden');
+        if (isHidden) {
+          content.classList.remove('hidden');
+          text.textContent = 'Ocultar temario ▲';
+        } else {
+          content.classList.add('hidden');
+          text.textContent = 'Ver temario ▼';
+        }
+      });
+    }
+  }
+
+  setupSidebarAccordion();
+  document.addEventListener('astro:page-load', setupSidebarAccordion);
+</script>
