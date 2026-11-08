@@ -1452,6 +1452,354 @@ main:
     lw ra, 28(sp)
     addi sp, sp, 32
     ret`
+  },
+  {
+    id: 'ciclos-for-while-dowhile',
+    badge: '6. Control de Flujo: For, While & Do-While',
+    category: 'Estructuras Repetitivas & Saltos',
+    academicNote: 'Demuestra la linearización canónica de los tres ciclos en compiladores: 1) "for" con inicialización, evaluación y paso; 2) "while" con comprobación previa; 3) "do-while" con evaluación posterior (garantiza al menos una ejecución). En C3D se generan etiquetas de inicio, cuerpo y salida mediante saltos condicionales e incondicionales.',
+    code: `// Caso 6: Estructuras Repetitivas (For, While & Do-While)
+// Ilustra la generación canónica de etiquetas de salto en compiladores
+class ProcesadorCiclos {
+    int totalIteraciones;
+    int acumuladorGeneral;
+
+    // Método que combina for, while y do-while para procesar datos
+    int procesarIteraciones(int limite, int paso) {
+        int sumaFor = 0;
+        int sumaWhile = 0;
+        int sumaDoWhile = 0;
+
+        // 1. Ciclo FOR: Inicialización, condición y actualización
+        for (int i = 0; i < limite; i = i + paso) {
+            sumaFor = sumaFor + i;
+        }
+
+        // 2. Ciclo WHILE: Evaluación previa de la condición
+        int j = 0;
+        while (j < limite) {
+            sumaWhile = sumaWhile + j;
+            j = j + paso;
+        }
+
+        // 3. Ciclo DO-WHILE: Evaluación posterior (al menos una ejecución)
+        int k = 0;
+        do {
+            sumaDoWhile = sumaDoWhile + k;
+            k = k + paso;
+        } while (k < limite);
+
+        int granTotal = sumaFor + sumaWhile + sumaDoWhile;
+        return granTotal;
+    }
+
+    void main() {
+        this.totalIteraciones = 0;
+        this.acumuladorGeneral = 0;
+
+        int n = 5;
+        int salto = 1;
+        int resultado = procesarIteraciones(n, salto);
+
+        this.acumuladorGeneral = resultado;
+        System.out.println("Procesamiento de ciclos completado:");
+        System.out.println(resultado);
+    }
+}`,
+    stackLayout: [
+      { offset: '0(fp)', name: 'Antiguo Frame Pointer (s0)', reg: 'sw s0, 24(sp)' },
+      { offset: '-4(fp)', name: 'Dirección de retorno (ra)', reg: 'sw ra, 28(sp)' },
+      { offset: '-8(fp)', name: 'Parámetro límite (a0)', reg: 'sw a0, -8(fp)' },
+      { offset: '-12(fp)', name: 'Parámetro paso (a1)', reg: 'sw a1, -12(fp)' },
+      { offset: '-16(fp)', name: 'Acumulador sumaFor (t0)', reg: 'sw t0, -16(fp)' },
+      { offset: '-20(fp)', name: 'Acumulador sumaWhile (t1)', reg: 'sw t1, -20(fp)' },
+      { offset: '-24(fp)', name: 'Acumulador sumaDoWhile (t2)', reg: 'sw t2, -24(fp)' },
+      { offset: '-28(fp)', name: 'Resultado granTotal (a0)', reg: 'sw a0, -28(fp)' }
+    ],
+    heapLayout: [
+      { addr: '0x1000', field: 'this.totalIteraciones', value: '15' },
+      { addr: '0x1004', field: 'this.acumuladorGeneral', value: '30' }
+    ],
+    c3dLines: [
+      '// Subprograma: procesarIteraciones (Traducción canónica no optimizada)',
+      'procesarIteraciones:',
+      'sumaFor = 0',
+      'sumaWhile = 0',
+      'sumaDoWhile = 0',
+      '',
+      '// 1. Ciclo FOR',
+      'i = 0',
+      'L_FOR_TEST:',
+      'if i < limite goto L_FOR_BODY',
+      'goto L_FOR_END',
+      'L_FOR_BODY:',
+      'sumaFor = sumaFor + i',
+      'i = i + paso',
+      'goto L_FOR_TEST',
+      'L_FOR_END:',
+      '',
+      '// 2. Ciclo WHILE',
+      'j = 0',
+      'L_WHILE_TEST:',
+      'if j < limite goto L_WHILE_BODY',
+      'goto L_WHILE_END',
+      'L_WHILE_BODY:',
+      'sumaWhile = sumaWhile + j',
+      'j = j + paso',
+      'goto L_WHILE_TEST',
+      'L_WHILE_END:',
+      '',
+      '// 3. Ciclo DO-WHILE (Evaluación posterior)',
+      'k = 0',
+      'L_DOWHILE_BODY:',
+      'sumaDoWhile = sumaDoWhile + k',
+      'k = k + paso',
+      'if k < limite goto L_DOWHILE_BODY',
+      'goto L_DOWHILE_END',
+      'L_DOWHILE_END:',
+      '',
+      't0 = sumaFor + sumaWhile',
+      'granTotal = t0 + sumaDoWhile',
+      'return granTotal',
+      '',
+      '// Subprograma Principal main()',
+      'main:',
+      'Heap[this + 0] = 0           // this.totalIteraciones = 0',
+      'Heap[this + 4] = 0           // this.acumuladorGeneral = 0',
+      'n = 5',
+      'salto = 1',
+      'param n',
+      'param salto',
+      'resultado = call procesarIteraciones, 2',
+      'Heap[this + 4] = resultado',
+      'param "Procesamiento de ciclos completado:"',
+      'call printString, 1',
+      'param resultado',
+      'call printInt, 1',
+      'return'
+    ],
+    c3dLinesUnoptimized: [
+      '// Subprograma: procesarIteraciones (Traducción canónica no optimizada)',
+      'procesarIteraciones:',
+      'sumaFor = 0',
+      'sumaWhile = 0',
+      'sumaDoWhile = 0',
+      '',
+      '// 1. Ciclo FOR',
+      'i = 0',
+      'L_FOR_TEST:',
+      'if i < limite goto L_FOR_BODY',
+      'goto L_FOR_END',
+      'L_FOR_BODY:',
+      'sumaFor = sumaFor + i',
+      'i = i + paso',
+      'goto L_FOR_TEST',
+      'L_FOR_END:',
+      '',
+      '// 2. Ciclo WHILE',
+      'j = 0',
+      'L_WHILE_TEST:',
+      'if j < limite goto L_WHILE_BODY',
+      'goto L_WHILE_END',
+      'L_WHILE_BODY:',
+      'sumaWhile = sumaWhile + j',
+      'j = j + paso',
+      'goto L_WHILE_TEST',
+      'L_WHILE_END:',
+      '',
+      '// 3. Ciclo DO-WHILE (Evaluación posterior)',
+      'k = 0',
+      'L_DOWHILE_BODY:',
+      'sumaDoWhile = sumaDoWhile + k',
+      'k = k + paso',
+      'if k < limite goto L_DOWHILE_BODY',
+      'goto L_DOWHILE_END',
+      'L_DOWHILE_END:',
+      '',
+      't0 = sumaFor + sumaWhile',
+      'granTotal = t0 + sumaDoWhile',
+      'return granTotal',
+      '',
+      '// Subprograma Principal main()',
+      'main:',
+      'Heap[this + 0] = 0',
+      'Heap[this + 4] = 0',
+      'n = 5',
+      'salto = 1',
+      'param n',
+      'param salto',
+      'resultado = call procesarIteraciones, 2',
+      'Heap[this + 4] = resultado',
+      'param "Procesamiento de ciclos completado:"',
+      'call printString, 1',
+      'param resultado',
+      'call printInt, 1',
+      'return'
+    ],
+    c3dLinesOptimized: [
+      '// Subprograma: procesarIteraciones (Optimizado por reducción de saltos)',
+      'procesarIteraciones:',
+      'sumaFor = 0',
+      'sumaWhile = 0',
+      'sumaDoWhile = 0',
+      '',
+      '// 1. For optimizado',
+      'i = 0',
+      'L_FOR_TEST:',
+      'if i >= limite goto L_FOR_END',
+      'sumaFor = sumaFor + i',
+      'i = i + paso',
+      'goto L_FOR_TEST',
+      'L_FOR_END:',
+      '',
+      '// 2. While optimizado',
+      'j = 0',
+      'L_WHILE_TEST:',
+      'if j >= limite goto L_WHILE_END',
+      'sumaWhile = sumaWhile + j',
+      'j = j + paso',
+      'goto L_WHILE_TEST',
+      'L_WHILE_END:',
+      '',
+      '// 3. Do-While optimizado',
+      'k = 0',
+      'L_DOWHILE_BODY:',
+      'sumaDoWhile = sumaDoWhile + k',
+      'k = k + paso',
+      'if k < limite goto L_DOWHILE_BODY',
+      '',
+      't0 = sumaFor + sumaWhile',
+      'granTotal = t0 + sumaDoWhile',
+      'return granTotal',
+      '',
+      '// Subprograma Principal main()',
+      'main:',
+      'Heap[this + 0] = 0',
+      'Heap[this + 4] = 0',
+      'param 5',
+      'param 1',
+      'resultado = call procesarIteraciones, 2',
+      'Heap[this + 4] = resultado',
+      'param "Procesamiento de ciclos completado:"',
+      'call printString, 1',
+      'param resultado',
+      'call printInt, 1',
+      'return'
+    ],
+    quadruples: [
+      { index: 1, op: '=', arg1: '0', arg2: '-', dest: 'sumaFor' },
+      { index: 2, op: '=', arg1: '0', arg2: '-', dest: 'sumaWhile' },
+      { index: 3, op: '=', arg1: '0', arg2: '-', dest: 'sumaDoWhile' },
+      { index: 4, op: '=', arg1: '0', arg2: '-', dest: 'i' },
+      { index: 5, op: '<', arg1: 'i', arg2: 'limite', dest: 'goto (8)' },
+      { index: 6, op: 'goto', arg1: '-', arg2: '-', dest: '(11)' },
+      { index: 7, op: '+', arg1: 'sumaFor', arg2: 'i', dest: 'sumaFor' },
+      { index: 8, op: '+', arg1: 'i', arg2: 'paso', dest: 'i' },
+      { index: 9, op: 'goto', arg1: '-', arg2: '-', dest: '(5)' },
+      { index: 10, op: '=', arg1: '0', arg2: '-', dest: 'j' },
+      { index: 11, op: '<', arg1: 'j', arg2: 'limite', dest: 'goto (14)' },
+      { index: 12, op: 'goto', arg1: '-', arg2: '-', dest: '(17)' },
+      { index: 13, op: '+', arg1: 'sumaWhile', arg2: 'j', dest: 'sumaWhile' },
+      { index: 14, op: '+', arg1: 'j', arg2: 'paso', dest: 'j' },
+      { index: 15, op: 'goto', arg1: '-', arg2: '-', dest: '(11)' },
+      { index: 16, op: '=', arg1: '0', arg2: '-', dest: 'k' },
+      { index: 17, op: '+', arg1: 'sumaDoWhile', arg2: 'k', dest: 'sumaDoWhile' },
+      { index: 18, op: '+', arg1: 'k', arg2: 'paso', dest: 'k' },
+      { index: 19, op: '<', arg1: 'k', arg2: 'limite', dest: 'goto (17)' },
+      { index: 20, op: '+', arg1: 'sumaFor', arg2: 'sumaWhile', dest: 't0' },
+      { index: 21, op: '+', arg1: 't0', arg2: 'sumaDoWhile', dest: 'granTotal' },
+      { index: 22, op: 'return', arg1: 'granTotal', arg2: '-', dest: '-' }
+    ],
+    riscvAssembly: `.data
+str_ciclos:  .string "Procesamiento de ciclos completado:"
+
+.text
+.globl main
+.globl procesarIteraciones
+
+# Subprograma: procesarIteraciones(limite: a0, paso: a1) -> a0
+procesarIteraciones:
+    addi sp, sp, -32
+    sw ra, 28(sp)
+    sw s0, 24(sp)
+    addi s0, sp, 32
+
+    # Inicialización de acumuladores
+    li t0, 0                # t0 = sumaFor
+    li t1, 0                # t1 = sumaWhile
+    li t2, 0                # t2 = sumaDoWhile
+
+    # 1. Ciclo FOR: for (i = 0; i < limite; i += paso)
+    li t3, 0                # t3 = i (índice for)
+L_FOR_TEST:
+    bge t3, a0, L_FOR_END   # Si i >= limite, salir
+    add t0, t0, t3          # sumaFor += i
+    add t3, t3, a1          # i += paso
+    j L_FOR_TEST
+L_FOR_END:
+
+    # 2. Ciclo WHILE: while (j < limite)
+    li t4, 0                # t4 = j (índice while)
+L_WHILE_TEST:
+    bge t4, a0, L_WHILE_END # Si j >= limite, salir
+    add t1, t1, t4          # sumaWhile += j
+    add t4, t4, a1          # j += paso
+    j L_WHILE_TEST
+L_WHILE_END:
+
+    # 3. Ciclo DO-WHILE: do { ... } while (k < limite);
+    li t5, 0                # t5 = k (índice do-while)
+L_DOWHILE_BODY:
+    add t2, t2, t5          # sumaDoWhile += k
+    add t5, t5, a1          # k += paso
+    blt t5, a0, L_DOWHILE_BODY # Si k < limite, repetir cuerpo
+
+    # Suma total de los tres ciclos
+    add t6, t0, t1          # t6 = sumaFor + sumaWhile
+    add a0, t6, t2          # a0 = granTotal (retorno en a0 = 30)
+
+    # Epílogo de procesarIteraciones
+    lw s0, 24(sp)
+    lw ra, 28(sp)
+    addi sp, sp, 32
+    ret
+
+# Subprograma principal main
+main:
+    addi sp, sp, -32
+    sw ra, 28(sp)
+    sw s0, 24(sp)
+    addi s0, sp, 32
+
+    # Objeto en Heap (0x1000)
+    li s1, 0x1000           # Instancia en Heap
+    sw zero, 0(s1)          # this.totalIteraciones = 0
+    sw zero, 4(s1)          # this.acumuladorGeneral = 0
+
+    # Invocación: procesarIteraciones(5, 1)
+    li a0, 5                # Parámetro 1: limite = 5
+    li a1, 1                # Parámetro 2: paso = 1
+    jal ra, procesarIteraciones
+    mv s2, a0               # Preserva resultado (30) en s2
+
+    # Actualiza atributo acumuladorGeneral en Heap
+    sw s2, 4(s1)
+
+    # Salida por consola: Mensaje descriptivo
+    la a0, str_ciclos
+    li a7, 4                # syscall 4 (print_string)
+    ecall
+
+    # Salida por consola: Entero calculado
+    mv a0, s2
+    li a7, 1                # syscall 1 (print_int)
+    ecall
+
+    # Epílogo de main
+    lw s0, 24(sp)
+    lw ra, 28(sp)
+    addi sp, sp, 32
+    ret`
   }
 ];
 
