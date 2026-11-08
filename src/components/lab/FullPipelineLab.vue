@@ -207,7 +207,7 @@
         <div v-else-if="compileSuccessToast || isCustom" class="p-2.5 bg-cyan-950/40 border border-cyan-500/40 rounded-xl text-cyan-300 text-xs font-mono flex items-center justify-between">
           <span class="flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-            <span>Pipeline activo: {{ compiledResult.quadruples.length }} cuartetas, {{ compiledResult.c3dLines.length }} líneas C3D generadas</span>
+            <span>Pipeline activo: {{ compiledResult.quadruples.length }} cuartetas, {{ (c3dOptMode === 'optimized' ? activeC3dOptimized : activeC3dUnoptimized).length }} líneas C3D ({{ c3dOptMode === 'unoptimized' ? 'No Optimizado' : c3dOptMode === 'optimized' ? 'Optimizado' : 'Comparativa' }})</span>
           </span>
           <span class="text-[10px] bg-cyan-900/60 px-2 py-0.5 rounded text-cyan-200">RV32I Sincronizado</span>
         </div>
@@ -280,20 +280,134 @@
 
         <!-- 1. Vista Código de Tres Direcciones (C3D) -->
         <div v-if="activeOutputTab === 'c3d'" class="space-y-3">
-          <div class="bg-[#080d1a] rounded-2xl border border-slate-800 p-4 font-mono text-xs overflow-x-auto shadow-inner h-[380px] overflow-y-auto">
-            <div class="space-y-1">
-              <div
-                v-for="(line, idx) in compiledResult.c3dLines"
-                :key="idx"
-                class="flex items-start gap-3 hover:bg-slate-900/60 px-2 py-0.5 rounded"
+          <!-- Selector de Modo de C3D: No Optimizado (Principal) vs Optimizado vs Comparativa -->
+          <div class="flex flex-wrap items-center justify-between gap-2 p-2 bg-[#090f20] rounded-xl border border-slate-800 text-xs font-mono">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="text-slate-400 text-[11px] font-bold">Modo C3D:</span>
+              <button
+                @click="c3dOptMode = 'unoptimized'"
+                :class="c3dOptMode === 'unoptimized'
+                  ? 'bg-amber-950/80 text-amber-300 border border-amber-500/50 font-bold shadow-[0_0_10px_rgba(245,158,11,0.25)]'
+                  : 'text-slate-400 hover:text-slate-200'"
+                class="px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1"
+                title="Traducción dirigida por la sintaxis pura con saltos goto tras if"
               >
-                <span class="text-xs text-slate-500 w-8 select-none text-right shrink-0">{{ idx + 1 }}.</span>
-                <span v-html="highlightC3DLine(line)" class="whitespace-pre font-mono flex-1"></span>
+                <span>⚠️</span>
+                <span>No Optimizado (Canónico)</span>
+              </button>
+              <button
+                @click="c3dOptMode = 'optimized'"
+                :class="c3dOptMode === 'optimized'
+                  ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/50 font-bold shadow-[0_0_10px_rgba(16,185,129,0.25)]'
+                  : 'text-slate-400 hover:text-slate-200'"
+                class="px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1"
+                title="Código C3D con inversión de saltos condicionales y reducción"
+              >
+                <span>⚡</span>
+                <span>Optimizado</span>
+              </button>
+              <button
+                @click="c3dOptMode = 'diff'"
+                :class="c3dOptMode === 'diff'
+                  ? 'bg-purple-950/80 text-purple-300 border border-purple-500/50 font-bold shadow-[0_0_10px_rgba(168,85,247,0.25)]'
+                  : 'text-slate-400 hover:text-slate-200'"
+                class="px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1"
+                title="Comparar ambas versiones lado a lado"
+              >
+                <span>⚖️</span>
+                <span>Comparativa</span>
+              </button>
+            </div>
+
+            <span class="text-[10px] text-slate-500 hidden sm:inline">
+              {{ c3dOptMode === 'unoptimized' ? 'Trad. Dirigida por Sintaxis (SDT)' : c3dOptMode === 'optimized' ? 'Peephole / Inversión de saltos' : 'Contraste Lado a Lado' }}
+            </span>
+          </div>
+
+          <!-- MODO 1: Solo No Optimizado (Principal / Canónico del curso) -->
+          <div v-if="c3dOptMode === 'unoptimized'" class="space-y-3">
+            <div class="bg-[#080d1a] rounded-2xl border border-amber-900/40 p-4 font-mono text-xs overflow-x-auto shadow-inner h-[380px] overflow-y-auto">
+              <div class="space-y-1">
+                <div
+                  v-for="(line, idx) in activeC3dUnoptimized"
+                  :key="idx"
+                  class="flex items-start gap-3 hover:bg-slate-900/60 px-2 py-0.5 rounded"
+                >
+                  <span class="text-xs text-slate-500 w-8 select-none text-right shrink-0">{{ idx + 1 }}.</span>
+                  <span v-html="highlightC3DLine(line)" class="whitespace-pre font-mono flex-1"></span>
+                </div>
               </div>
             </div>
+            <div class="p-3 bg-amber-950/20 border border-amber-500/30 rounded-xl text-xs text-amber-200/90 leading-relaxed font-sans">
+              <strong class="text-amber-300 font-mono">⚠️ Regla Canónica de C3D No Optimizado (Ing. Mario Ramírez Tobar):</strong>
+              En la traducción directa, toda estructura condicional genera obligatoriamente un salto <code class="text-purple-300 font-mono font-bold">if cond goto L_TRUE</code> seguido de un <code class="text-cyan-300 font-mono font-bold">goto L_FALSE</code> inmediato. Este esquema formal preserva el árbol sintáctico intacto antes de las optimizaciones de mirilla.
+            </div>
           </div>
-          <div class="p-3 bg-cyan-950/20 border border-cyan-500/30 rounded-xl text-xs text-slate-300 leading-relaxed">
-            <strong class="text-cyan-300">Regla del Ing. Mario Ramírez Tobar:</strong> Toda instrucción de C3D cumple la restricción de a lo sumo 3 accesos a memoria por sentencia y lineariza estructuras de control complejas en saltos <code class="text-purple-300 font-bold">goto</code> y etiquetas.
+
+          <!-- MODO 2: Solo Optimizado (Post-Peephole) -->
+          <div v-else-if="c3dOptMode === 'optimized'" class="space-y-3">
+            <div class="bg-[#080d1a] rounded-2xl border border-emerald-900/40 p-4 font-mono text-xs overflow-x-auto shadow-inner h-[380px] overflow-y-auto">
+              <div class="space-y-1">
+                <div
+                  v-for="(line, idx) in activeC3dOptimized"
+                  :key="idx"
+                  class="flex items-start gap-3 hover:bg-slate-900/60 px-2 py-0.5 rounded"
+                >
+                  <span class="text-xs text-slate-500 w-8 select-none text-right shrink-0">{{ idx + 1 }}.</span>
+                  <span v-html="highlightC3DLine(line)" class="whitespace-pre font-mono flex-1"></span>
+                </div>
+              </div>
+            </div>
+            <div class="p-3 bg-emerald-950/20 border border-emerald-500/30 rounded-xl text-xs text-emerald-200/90 leading-relaxed font-sans">
+              <strong class="text-emerald-300 font-mono">⚡ Fase de Optimización de Mirilla (Peephole):</strong>
+              Invierte la condición de salto relacional, suprimiendo la etiqueta intermedia y el <code class="text-cyan-300 font-mono font-bold">goto</code> redundante posterior al <code class="text-purple-300 font-mono font-bold">if</code>. También elimina operaciones de identidad algebraica (<code class="text-cyan-300 font-mono font-bold">+ 0</code>) y aplica reducción de fuerza.
+            </div>
+          </div>
+
+          <!-- MODO 3: Comparativa Lado a Lado -->
+          <div v-else class="space-y-3">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 h-[400px] overflow-hidden">
+              <!-- Columna No Optimizada -->
+              <div class="flex flex-col bg-[#080d1a] rounded-xl border border-amber-900/40 overflow-hidden">
+                <div class="px-3 py-1.5 bg-amber-950/40 border-b border-amber-900/40 text-[11px] font-mono font-bold text-amber-300 flex items-center justify-between">
+                  <span>⚠️ No Optimizado (Canónico)</span>
+                  <span class="text-[10px] text-slate-400">{{ activeC3dUnoptimized.length }} líneas</span>
+                </div>
+                <div class="flex-1 overflow-y-auto p-3 font-mono text-xs space-y-1">
+                  <div
+                    v-for="(line, idx) in activeC3dUnoptimized"
+                    :key="idx"
+                    class="flex items-start gap-2 hover:bg-slate-900/60 px-1 py-0.2 rounded"
+                  >
+                    <span class="text-[11px] text-slate-600 w-6 select-none text-right shrink-0">{{ idx + 1 }}.</span>
+                    <span v-html="highlightC3DLine(line)" class="whitespace-pre font-mono flex-1 text-[11px]"></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Columna Optimizada -->
+              <div class="flex flex-col bg-[#080d1a] rounded-xl border border-emerald-900/40 overflow-hidden">
+                <div class="px-3 py-1.5 bg-emerald-950/40 border-b border-emerald-900/40 text-[11px] font-mono font-bold text-emerald-300 flex items-center justify-between">
+                  <span>⚡ Optimizado (Post-Peephole)</span>
+                  <span class="text-[10px] text-slate-400">{{ activeC3dOptimized.length }} líneas</span>
+                </div>
+                <div class="flex-1 overflow-y-auto p-3 font-mono text-xs space-y-1">
+                  <div
+                    v-for="(line, idx) in activeC3dOptimized"
+                    :key="idx"
+                    class="flex items-start gap-2 hover:bg-slate-900/60 px-1 py-0.2 rounded"
+                  >
+                    <span class="text-[11px] text-slate-600 w-6 select-none text-right shrink-0">{{ idx + 1 }}.</span>
+                    <span v-html="highlightC3DLine(line)" class="whitespace-pre font-mono flex-1 text-[11px]"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="p-3 bg-purple-950/20 border border-purple-500/30 rounded-xl text-xs text-purple-200/90 leading-relaxed font-sans">
+              <strong class="text-purple-300 font-mono">⚖️ Contraste Académico:</strong>
+              Compare directamente cómo la optimización elimina los saltos <code class="text-cyan-300 font-mono font-bold">goto</code> redundantes, fusiona etiquetas y economiza ciclos de reloj en la CPU.
+            </div>
           </div>
         </div>
 
@@ -421,6 +535,8 @@ interface PresetItem {
   stackLayout: { offset: string; name: string; reg: string }[];
   heapLayout: { addr: string; field: string; value: string }[];
   c3dLines: string[];
+  c3dLinesUnoptimized?: string[];
+  c3dLinesOptimized?: string[];
   quadruples: { index: number; op: string; arg1: string; arg2: string; dest: string }[];
   riscvAssembly: string;
 }
@@ -481,15 +597,82 @@ class CuentaBancaria {
       'param monto                  // Parámetro 3: monto a debitar',
       't_ret2 = call CuentaBancaria_transferir, 3',
       '',
-      '// Subprograma: CuentaBancaria_transferir',
+      '// Subprograma: CuentaBancaria_transferir (Traducción Dirigida por Sintaxis NO Optimizada)',
       'CuentaBancaria_transferir:',
       't2 = Heap[this + 0]          // Carga this.saldo desde Heap',
-      'if t2 >= monto goto L_SUFICIENTE',
-      'return 0                     // Fondos insuficientes',
-      'L_SUFICIENTE:',
+      'if t2 >= monto goto L_SUF_TRUE // Salto si condición se cumple',
+      'goto L_SUF_FALSE             // GOTO TRAS IF: salto a rama falsa',
+      'L_SUF_TRUE:                  // Rama verdadera (fondos suficientes)',
       't3 = t2 - monto',
       'Heap[this + 0] = t3          // Descuenta saldo en Heap',
-      'return 1                     // Éxito en transferencia'
+      'return 1                     // Retorna 1 (éxito)',
+      'goto L_TRANS_FIN             // Salto al fin de la estructura',
+      'L_SUF_FALSE:                 // Rama falsa (fondos insuficientes)',
+      'return 0                     // Retorna 0 (error)',
+      'L_TRANS_FIN:'
+    ],
+    c3dLinesUnoptimized: [
+      '// Sitio de llamada (invocación con paso de parámetros)',
+      'param this                   // Parámetro 1: referencia a la instancia en Heap',
+      'param monto                  // Parámetro 2: valor a depositar',
+      't_ret = call CuentaBancaria_depositar, 2',
+      '',
+      '// Subprograma: CuentaBancaria_depositar',
+      'CuentaBancaria_depositar:',
+      't0 = Heap[this + 0]          // Carga atributo this.saldo desde Heap',
+      't1 = t0 + monto              // Suma saldo actual y monto recibido',
+      'Heap[this + 0] = t1          // Almacena nuevo saldo en Heap',
+      'return t1                    // Retorna saldo actualizado en a0',
+      '',
+      '// Sitio de llamada (invocación a transferir)',
+      'param this                   // Parámetro 1: referencia al objeto',
+      'param destinoId              // Parámetro 2: id destino',
+      'param monto                  // Parámetro 3: monto a debitar',
+      't_ret2 = call CuentaBancaria_transferir, 3',
+      '',
+      '// Subprograma: CuentaBancaria_transferir (Traducción Dirigida por Sintaxis NO Optimizada)',
+      'CuentaBancaria_transferir:',
+      't2 = Heap[this + 0]          // Carga this.saldo desde Heap',
+      'if t2 >= monto goto L_SUF_TRUE // Salto si condición se cumple',
+      'goto L_SUF_FALSE             // GOTO TRAS IF: salto a rama falsa',
+      'L_SUF_TRUE:                  // Rama verdadera (fondos suficientes)',
+      't3 = t2 - monto',
+      'Heap[this + 0] = t3          // Descuenta saldo en Heap',
+      'return 1                     // Retorna 1 (éxito)',
+      'goto L_TRANS_FIN             // Salto al fin de la estructura',
+      'L_SUF_FALSE:                 // Rama falsa (fondos insuficientes)',
+      'return 0                     // Retorna 0 (error)',
+      'L_TRANS_FIN:'
+    ],
+    c3dLinesOptimized: [
+      '// Invocación externa del método depositar:',
+      'param this',
+      'param monto',
+      't_ret = call CuentaBancaria_depositar, 2',
+      '',
+      '// Subprograma: CuentaBancaria_depositar',
+      'CuentaBancaria_depositar:',
+      't0 = Heap[this + 0]',
+      't1 = t0 + monto',
+      'Heap[this + 0] = t1',
+      'return t1',
+      '',
+      '// Invocación externa del método transferir:',
+      'param this',
+      'param destinoId',
+      'param monto',
+      't_ret2 = call CuentaBancaria_transferir, 3',
+      '',
+      '// Subprograma: CuentaBancaria_transferir (Optimizado por inversión de saltos)',
+      'CuentaBancaria_transferir:',
+      't2 = Heap[this + 0]',
+      '// Optimización: salto directo si saldo < monto (elimina L_SUF_TRUE y goto extra)',
+      'if t2 < monto goto L_SUF_FALLA',
+      't3 = t2 - monto',
+      'Heap[this + 0] = t3',
+      'return 1',
+      'L_SUF_FALLA:',
+      'return 0'
     ],
     quadruples: [
       { index: 1, op: 'param', arg1: 'this', arg2: '-', dest: '-' },
@@ -560,16 +743,49 @@ class Matematicas {
       { addr: '0x1000', field: 'Instancia Matematicas', value: 'vtable_ptr' }
     ],
     c3dLines: [
-      '// Subprograma: Matematicas_factorial',
+      '// Subprograma: Matematicas_factorial (Traducción canónica no optimizada)',
       'Matematicas_factorial:',
-      'if n <= 1 goto L_BASE',
-      't0 = n - 1',
-      'param t0                    // Prepara parámetro para llamada recursiva',
+      'if n <= 1 goto L_BASE_TRUE   // Salto condicional al caso base',
+      'goto L_RECURSION_FALSE       // GOTO TRAS IF: salto a recursión',
+      'L_BASE_TRUE:',
+      'return 1                     // Caso base: 0! = 1! = 1',
+      'goto L_FACT_END',
+      'L_RECURSION_FALSE:',
+      't0 = n - 1                   // Prepara argumento recursivo',
+      'param t0                     // Pasa t0 a la llamada recursiva',
       't1 = call Matematicas_factorial, 1',
-      't2 = n * t1                 // Multiplica al regresar de la recursión',
+      't2 = n * t1                  // Multiplica al regresar del desenrollado',
       'return t2',
-      'L_BASE:',
-      'return 1'
+      'L_FACT_END:'
+    ],
+    c3dLinesUnoptimized: [
+      '// Subprograma: Matematicas_factorial (Traducción canónica no optimizada)',
+      'Matematicas_factorial:',
+      'if n <= 1 goto L_BASE_TRUE   // Salto condicional al caso base',
+      'goto L_RECURSION_FALSE       // GOTO TRAS IF: salto a recursión',
+      'L_BASE_TRUE:',
+      'return 1                     // Caso base: 0! = 1! = 1',
+      'goto L_FACT_END',
+      'L_RECURSION_FALSE:',
+      't0 = n - 1                   // Prepara argumento recursivo',
+      'param t0                     // Pasa t0 a la llamada recursiva',
+      't1 = call Matematicas_factorial, 1',
+      't2 = n * t1                  // Multiplica al regresar del desenrollado',
+      'return t2',
+      'L_FACT_END:'
+    ],
+    c3dLinesOptimized: [
+      '// Subprograma: Matematicas_factorial (Optimizado por inversión de salto)',
+      'Matematicas_factorial:',
+      '// Optimización: salto directo a recursión si n > 1 (caso base retornado inline)',
+      'if n > 1 goto L_RECURSION',
+      'return 1                     // Caso base retornado de inmediato',
+      'L_RECURSION:',
+      't0 = n - 1',
+      'param t0',
+      't1 = call Matematicas_factorial, 1',
+      't2 = n * t1',
+      'return t2'
     ],
     quadruples: [
       { index: 1, op: '<=', arg1: 'n', arg2: '1', dest: 'goto (8)' },
@@ -651,31 +867,81 @@ class Algoritmos {
     ],
     heapLayout: [],
     c3dLines: [
-      '// Subprograma: Algoritmos_fibonacci (con Frame Pointer canónico)',
+      '// Subprograma: Algoritmos_fibonacci (Canónico con goto tras if)',
       'Algoritmos_fibonacci:',
-      '// Verificación de casos base (poda del árbol recursivo)',
-      'if n <= 0 goto L_CERO       // Salto a caso base 0',
-      'if n == 1 goto L_UNO        // Salto a caso base 1',
-      '',
-      '// Primera llamada recursiva: fib(n - 1) (Rama Izquierda)',
-      't0 = n - 1                  // Prepara argumento rama izquierda',
-      'param t0                    // Pasa t0 como primer argumento a0',
-      't1 = call Algoritmos_fibonacci, 1 // t1 = fib(n - 1)',
-      '',
-      '// Segunda llamada recursiva: fib(n - 2) (Rama Derecha)',
-      't2 = n - 2                  // Prepara argumento rama derecha',
-      'param t2                    // Pasa t2 como primer argumento a0',
-      't3 = call Algoritmos_fibonacci, 1 // t3 = fib(n - 2)',
-      '',
-      '// Suma de ambas ramas del árbol y retorno',
-      't4 = t1 + t3                // t4 = fib(n-1) + fib(n-2)',
-      'return t4                   // Retorna resultado acumulado a0',
-      '',
-      '// Puntos de retorno de casos base',
+      '// Evaluación caso base 1 (n <= 0):',
+      'if n <= 0 goto L_BASE0_TRUE',
+      'goto L_BASE0_FALSE           // GOTO TRAS IF: continúa evaluación',
+      'L_BASE0_TRUE:',
+      'return 0',
+      'goto L_FIB_END',
+      'L_BASE0_FALSE:',
+      '// Evaluación caso base 2 (n == 1):',
+      'if n == 1 goto L_BASE1_TRUE',
+      'goto L_RECURSION_DOBLE       // GOTO TRAS IF: continúa a recursión',
+      'L_BASE1_TRUE:',
+      'return 1',
+      'goto L_FIB_END',
+      'L_RECURSION_DOBLE:',
+      '// Rama izquierda: fib(n - 1)',
+      't0 = n - 1',
+      'param t0',
+      't1 = call Algoritmos_fibonacci, 1',
+      '// Rama derecha: fib(n - 2)',
+      't2 = n - 2',
+      'param t2',
+      't3 = call Algoritmos_fibonacci, 1',
+      't4 = t1 + t3',
+      'return t4',
+      'L_FIB_END:'
+    ],
+    c3dLinesUnoptimized: [
+      '// Subprograma: Algoritmos_fibonacci (Canónico con goto tras if)',
+      'Algoritmos_fibonacci:',
+      '// Evaluación caso base 1 (n <= 0):',
+      'if n <= 0 goto L_BASE0_TRUE',
+      'goto L_BASE0_FALSE           // GOTO TRAS IF: continúa evaluación',
+      'L_BASE0_TRUE:',
+      'return 0',
+      'goto L_FIB_END',
+      'L_BASE0_FALSE:',
+      '// Evaluación caso base 2 (n == 1):',
+      'if n == 1 goto L_BASE1_TRUE',
+      'goto L_RECURSION_DOBLE       // GOTO TRAS IF: continúa a recursión',
+      'L_BASE1_TRUE:',
+      'return 1',
+      'goto L_FIB_END',
+      'L_RECURSION_DOBLE:',
+      '// Rama izquierda: fib(n - 1)',
+      't0 = n - 1',
+      'param t0',
+      't1 = call Algoritmos_fibonacci, 1',
+      '// Rama derecha: fib(n - 2)',
+      't2 = n - 2',
+      'param t2',
+      't3 = call Algoritmos_fibonacci, 1',
+      't4 = t1 + t3',
+      'return t4',
+      'L_FIB_END:'
+    ],
+    c3dLinesOptimized: [
+      '// Subprograma: Algoritmos_fibonacci (Optimizado con poda de saltos)',
+      'Algoritmos_fibonacci:',
+      '// Optimización: saltos directos sin bifurcaciones intermedias redundantes',
+      'if n <= 0 goto L_CERO',
+      'if n == 1 goto L_UNO',
+      't0 = n - 1',
+      'param t0',
+      't1 = call Algoritmos_fibonacci, 1',
+      't2 = n - 2',
+      'param t2',
+      't3 = call Algoritmos_fibonacci, 1',
+      't4 = t1 + t3',
+      'return t4',
       'L_CERO:',
-      'return 0                    // Retorna caso base n <= 0',
+      'return 0',
       'L_UNO:',
-      'return 1                    // Retorna caso base n == 1'
+      'return 1'
     ],
     quadruples: [
       { index: 1, op: '<=', arg1: 'n', arg2: '0', dest: 'goto (12)' },
@@ -762,16 +1028,52 @@ class Facturacion {
     ],
     heapLayout: [],
     c3dLines: [
+      '// Subprograma: Facturacion_liquidar (Canónico sin reducción de temporales)',
       'Facturacion_liquidar:',
       't0 = p1 + p2',
       't1 = t0 + p3',
-      '// ... suma p4 hasta p8',
+      't2 = t1 + p4',
+      't3 = t2 + p5',
+      't4 = t3 + p6',
+      't5 = t4 + p7',
       't6 = t5 + p8',
-      'base = t6',
-      't7 = extra1 + extra2        // extra1 y extra2 vienen de la pila positiva',
-      'recargo = t7',
+      'base = t6                   // Asignación de copia intermedia',
+      't7 = extra1 + extra2        // Argumentos desbordados en pila positiva (>= 0(fp))',
+      'recargo = t7                // Asignación de copia intermedia',
       't8 = base + recargo',
-      'return t8'
+      'total = t8',
+      'return total'
+    ],
+    c3dLinesUnoptimized: [
+      '// Subprograma: Facturacion_liquidar (Canónico sin reducción de temporales)',
+      'Facturacion_liquidar:',
+      't0 = p1 + p2',
+      't1 = t0 + p3',
+      't2 = t1 + p4',
+      't3 = t2 + p5',
+      't4 = t3 + p6',
+      't5 = t4 + p7',
+      't6 = t5 + p8',
+      'base = t6                   // Asignación de copia intermedia',
+      't7 = extra1 + extra2        // Argumentos desbordados en pila positiva (>= 0(fp))',
+      'recargo = t7                // Asignación de copia intermedia',
+      't8 = base + recargo',
+      'total = t8',
+      'return total'
+    ],
+    c3dLinesOptimized: [
+      '// Subprograma: Facturacion_liquidar (Optimizado: reutilización y eliminación de copias)',
+      'Facturacion_liquidar:',
+      't0 = p1 + p2',
+      't0 = t0 + p3',
+      't0 = t0 + p4',
+      't0 = t0 + p5',
+      't0 = t0 + p6',
+      't0 = t0 + p7',
+      't0 = t0 + p8                // Acumulador unificado en t0',
+      't1 = extra1 + extra2        // Leídos de 0(fp) y 4(fp)',
+      't0 = t0 + t1                // Eliminadas variables intermedias base y recargo',
+      'return t0'
     ],
     quadruples: [
       { index: 1, op: '+', arg1: 'p1', arg2: 'p2', dest: 't0' },
@@ -895,44 +1197,49 @@ class SistemaEstadistico {
       { addr: '0x1030', field: 'lista[4] (int32)', value: '15' }
     ],
     c3dLines: [
-      '// Subprograma calcularSumaFiltrada(arr, n, umbral)',
+      '// Subprograma: calcularSumaFiltrada (Traducción canónica NO optimizada)',
       'calcularSumaFiltrada:',
       'suma = 0',
       'i = 0',
-      'hayValidos = false          // Inicialización booleana',
+      'hayValidos = 0               // false en C3D',
       '',
       'L_WHILE_TEST:',
-      'if i >= n goto L_WHILE_END   // Condición de parada del ciclo',
-      't0 = i * 4                  // Cálculo de offset en bytes (int32 = 4B)',
-      't1 = arr + t0               // Dirección efectiva arr[i]',
-      'elemento = Heap[t1]         // Carga elemento desde memoria Heap',
+      '// Bucle canónico con goto tras if:',
+      'if i < n goto L_WHILE_BODY   // Si i < n entra al cuerpo',
+      'goto L_WHILE_END             // GOTO TRAS IF: si i >= n salta a la salida',
+      'L_WHILE_BODY:',
+      't0 = i * 4                   // Desplazamiento en bytes sin optimizar',
+      't1 = arr + t0                // Dirección efectiva arr[i]',
+      'elemento = Heap[t1]         // Carga elemento desde Heap',
       '',
+      '// Condicional if-else con goto tras if:',
       'if elemento > umbral goto L_FILTRO_TRUE',
-      'goto L_FILTRO_FALSE',
-      '',
+      'goto L_FILTRO_FALSE          // GOTO TRAS IF: salta a rama else',
       'L_FILTRO_TRUE:',
-      'suma = suma + elemento      // Acumula elemento válido',
-      'hayValidos = true           // Literal booleano en C3D',
-      'goto L_INCREMENTO',
-      '',
+      'suma = suma + elemento      // Acumula elemento',
+      'hayValidos = 1               // true',
+      'goto L_INCREMENTO            // Salto incondicional al fin del if-else',
       'L_FILTRO_FALSE:',
-      'suma = suma + 0',
-      '',
+      'suma = suma + 0              // Identidad algebraica (+ 0) sin eliminar',
       'L_INCREMENTO:',
-      'i = i + 1                   // Avanza índice de inducción',
-      'goto L_WHILE_TEST',
-      '',
+      'i = i + 1                   // Variable de inducción',
+      'goto L_WHILE_TEST            // Regresa a evaluar condición del ciclo',
       'L_WHILE_END:',
-      'if hayValidos == true goto L_RET_SUMA',
-      'return -1                   // No hubo elementos válidos',
       '',
+      '// Verificación booleana final no optimizada:',
+      'if hayValidos == 1 goto L_RET_SUMA',
+      'goto L_RET_NEG               // GOTO TRAS IF',
       'L_RET_SUMA:',
       'return suma                 // Retorna total acumulado en a0',
+      'goto L_FUNC_FIN',
+      'L_RET_NEG:',
+      'return -1                   // No hubo elementos válidos',
+      'L_FUNC_FIN:',
       '',
       '// Subprograma Principal main()',
       'main:',
       'Heap[this + 4] = 5           // this.cantidad = 5',
-      'Heap[this + 8] = false       // this.procesado = false',
+      'Heap[this + 8] = 0           // this.procesado = false',
       't2 = 0x1020                 // Dirección base del arreglo en Heap',
       'lista = t2',
       'Heap[lista + 0] = 10         // lista[0] = 10',
@@ -942,13 +1249,123 @@ class SistemaEstadistico {
       'Heap[lista + 16] = 15        // lista[4] = 15',
       '',
       'umbralCorte = 12',
-      'param lista                  // Parámetro 1: dirección del arreglo',
-      't3 = Heap[this + 4]          // Carga this.cantidad',
-      'param t3                     // Parámetro 2: tamaño (5)',
-      'param umbralCorte            // Parámetro 3: umbral (12)',
+      'param lista                  // Invocación con paso de parámetros',
+      'param 5',
+      'param umbralCorte',
       'total = call calcularSumaFiltrada, 3',
-      'Heap[this + 8] = true        // this.procesado = true',
+      'Heap[this + 8] = 1           // this.procesado = true',
       'param "Procesamiento completado con exito" // Cadena en .data',
+      'call printString, 1',
+      'return'
+    ],
+    c3dLinesUnoptimized: [
+      '// Subprograma: calcularSumaFiltrada (Traducción canónica NO optimizada)',
+      'calcularSumaFiltrada:',
+      'suma = 0',
+      'i = 0',
+      'hayValidos = 0               // false en C3D',
+      '',
+      'L_WHILE_TEST:',
+      '// Bucle canónico con goto tras if:',
+      'if i < n goto L_WHILE_BODY   // Si i < n entra al cuerpo',
+      'goto L_WHILE_END             // GOTO TRAS IF: si i >= n salta a la salida',
+      'L_WHILE_BODY:',
+      't0 = i * 4                   // Desplazamiento en bytes sin optimizar',
+      't1 = arr + t0                // Dirección efectiva arr[i]',
+      'elemento = Heap[t1]         // Carga elemento desde Heap',
+      '',
+      '// Condicional if-else con goto tras if:',
+      'if elemento > umbral goto L_FILTRO_TRUE',
+      'goto L_FILTRO_FALSE          // GOTO TRAS IF: salta a rama else',
+      'L_FILTRO_TRUE:',
+      'suma = suma + elemento      // Acumula elemento',
+      'hayValidos = 1               // true',
+      'goto L_INCREMENTO            // Salto incondicional al fin del if-else',
+      'L_FILTRO_FALSE:',
+      'suma = suma + 0              // Identidad algebraica (+ 0) sin eliminar',
+      'L_INCREMENTO:',
+      'i = i + 1                   // Variable de inducción',
+      'goto L_WHILE_TEST            // Regresa a evaluar condición del ciclo',
+      'L_WHILE_END:',
+      '',
+      '// Verificación booleana final no optimizada:',
+      'if hayValidos == 1 goto L_RET_SUMA',
+      'goto L_RET_NEG               // GOTO TRAS IF',
+      'L_RET_SUMA:',
+      'return suma                 // Retorna total acumulado en a0',
+      'goto L_FUNC_FIN',
+      'L_RET_NEG:',
+      'return -1                   // No hubo elementos válidos',
+      'L_FUNC_FIN:',
+      '',
+      '// Subprograma Principal main()',
+      'main:',
+      'Heap[this + 4] = 5           // this.cantidad = 5',
+      'Heap[this + 8] = 0           // this.procesado = false',
+      't2 = 0x1020                 // Dirección base del arreglo en Heap',
+      'lista = t2',
+      'Heap[lista + 0] = 10         // lista[0] = 10',
+      'Heap[lista + 4] = 25         // lista[1] = 25',
+      'Heap[lista + 8] = 5          // lista[2] = 5',
+      'Heap[lista + 12] = 40        // lista[3] = 40',
+      'Heap[lista + 16] = 15        // lista[4] = 15',
+      '',
+      'umbralCorte = 12',
+      'param lista                  // Invocación con paso de parámetros',
+      'param 5',
+      'param umbralCorte',
+      'total = call calcularSumaFiltrada, 3',
+      'Heap[this + 8] = 1           // this.procesado = true',
+      'param "Procesamiento completado con exito" // Cadena en .data',
+      'call printString, 1',
+      'return'
+    ],
+    c3dLinesOptimized: [
+      '// Subprograma: calcularSumaFiltrada (Optimizado por inversión de saltos)',
+      'calcularSumaFiltrada:',
+      'suma = 0',
+      'i = 0',
+      'hayValidos = 0',
+      '',
+      'L_WHILE_TEST:',
+      '// Optimización: salto directo si i >= n (elimina L_WHILE_BODY y goto redundante)',
+      'if i >= n goto L_WHILE_END',
+      't0 = i << 2                  // Reducción de fuerza: i * 4 a i << 2',
+      't1 = arr + t0',
+      'elemento = Heap[t1]',
+      '',
+      '// Optimización: inversión de condición y eliminación de rama else vacía (+ 0)',
+      'if elemento <= umbral goto L_SKIP',
+      'suma = suma + elemento',
+      'hayValidos = 1',
+      'L_SKIP:',
+      'i = i + 1',
+      'goto L_WHILE_TEST',
+      'L_WHILE_END:',
+      '',
+      '// Optimización: retorno directo',
+      'if hayValidos == 0 goto L_FALLO',
+      'return suma',
+      'L_FALLO:',
+      'return -1',
+      '',
+      '// Subprograma Principal main()',
+      'main:',
+      'Heap[this + 4] = 5',
+      'Heap[this + 8] = 0',
+      'lista = 0x1020',
+      'Heap[lista + 0] = 10',
+      'Heap[lista + 4] = 25',
+      'Heap[lista + 8] = 5',
+      'Heap[lista + 12] = 40',
+      'Heap[lista + 16] = 15',
+      '',
+      'param lista',
+      'param 5',
+      'param 12',
+      'total = call calcularSumaFiltrada, 3',
+      'Heap[this + 8] = 1',
+      'param "Procesamiento completado con exito"',
       'call printString, 1',
       'return'
     ],
@@ -1102,6 +1519,49 @@ const activeOutputTab = ref<'c3d' | 'cuartetas' | 'riscv' | 'memoria'>('c3d');
 const editorMode = ref<'split' | 'edit' | 'preview'>('split');
 const editorHeight = ref<number>(520);
 const editorExpanded = ref<boolean>(false);
+const c3dOptMode = ref<'unoptimized' | 'optimized' | 'diff'>('unoptimized');
+
+function optimizeC3DLines(lines: string[]): string[] {
+  const result: string[] = [];
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    const nextLine = lines[i + 1] || '';
+    const thirdLine = lines[i + 2] || '';
+
+    // Detectar patrón no optimizado: if cond goto L1; goto L2; L1:
+    const ifMatch = line.match(/^if\s+(.*?)\s+goto\s+(\w+)/);
+    const gotoMatch = nextLine.match(/^goto\s+(\w+)/);
+    const labelMatch = thirdLine.match(/^(\w+):/);
+
+    if (ifMatch && gotoMatch && labelMatch && ifMatch[2] === labelMatch[1]) {
+      const cond = ifMatch[1];
+      const falseLabel = gotoMatch[1];
+      let invertedCond = `!(${cond})`;
+      if (cond.includes('==')) invertedCond = cond.replace('==', '!=');
+      else if (cond.includes('!=')) invertedCond = cond.replace('!=', '==');
+      else if (cond.includes('>=')) invertedCond = cond.replace('>=', '<');
+      else if (cond.includes('<=')) invertedCond = cond.replace('<=', '>');
+      else if (cond.includes('>')) invertedCond = cond.replace('>', '<=');
+      else if (cond.includes('<')) invertedCond = cond.replace('<', '>=');
+
+      result.push(`if ${invertedCond} goto ${falseLabel} // Optimización peephole: salto invertido`);
+      i += 2;
+      continue;
+    }
+
+    if (line.includes('+ 0') || line.includes('* 1')) {
+      const simplified = line.replace(/\s*\+\s*0/, '').replace(/\s*\*\s*1/, '');
+      result.push(`${simplified} // Optimización: identidad algebraica`);
+      i++;
+      continue;
+    }
+
+    result.push(line);
+    i++;
+  }
+  return result;
+}
 
 const currentPreset = computed(() => presets[selectedPresetIdx.value]);
 const sourceCode = ref(presets[0].code);
@@ -1181,6 +1641,26 @@ const compiledResult = computed(() => {
     quadruples: currentPreset.value.quadruples,
     riscvAssembly: currentPreset.value.riscvAssembly
   };
+});
+
+const activeC3dUnoptimized = computed(() => {
+  if (customCompilation.value) {
+    if (customCompilation.value.errors.length === 0) {
+      return customCompilation.value.c3dLines;
+    }
+    return ['// Error al compilar código fuente personalizado:', `// ${customCompilation.value.errors[0]}`];
+  }
+  return currentPreset.value.c3dLinesUnoptimized || currentPreset.value.c3dLines;
+});
+
+const activeC3dOptimized = computed(() => {
+  if (customCompilation.value) {
+    if (customCompilation.value.errors.length === 0) {
+      return optimizeC3DLines(customCompilation.value.c3dLines);
+    }
+    return ['// Error al compilar código fuente personalizado:', `// ${customCompilation.value.errors[0]}`];
+  }
+  return currentPreset.value.c3dLinesOptimized || currentPreset.value.c3dLines;
 });
 
 const activeStackLayout = computed(() => {
