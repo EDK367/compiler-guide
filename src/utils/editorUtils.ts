@@ -37,3 +37,4 @@ export function handleTabIndent(e: KeyboardEvent, getValue: () => string, setVal
     target.selectionStart = target.selectionEnd = start + spaces.length;
   }
 }
+
