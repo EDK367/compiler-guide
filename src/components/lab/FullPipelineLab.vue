@@ -37,66 +37,164 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
       
       <!-- Columna Izquierda: Editor y Visualizador de Código Fuente de Alto Nivel -->
-      <div class="lg:col-span-5 space-y-3">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-          <label class="text-xs font-mono uppercase tracking-wider text-slate-300 font-bold flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-purple-400"></span>
-            Código Fuente (Estilo Java / C)
-          </label>
-
+      <div :class="editorExpanded ? 'lg:col-span-12' : 'lg:col-span-5'" class="space-y-3 transition-all duration-300">
+        <div class="flex flex-wrap items-center justify-between border-b border-slate-800 pb-2.5 gap-2">
           <div class="flex items-center gap-2">
-            <!-- Alternador de Modo: Editor interactivo vs Código Coloreado -->
-            <div class="flex items-center gap-1 bg-slate-900 p-0.5 rounded-xl border border-slate-700 text-xs font-mono">
+            <label class="text-xs font-mono uppercase tracking-wider text-slate-300 font-bold flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+              Código Fuente (Java / C)
+            </label>
+            <span class="text-[11px] font-mono px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800" :class="isCustom ? 'text-cyan-300 font-bold' : 'text-purple-300'">
+              {{ isCustom ? '✏️ Personalizado' : currentPreset.category }}
+            </span>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <!-- Alternador de Modo: Split (juntos) vs Solo Editor vs Solo Coloreado -->
+            <div class="flex items-center gap-0.5 bg-slate-900 p-0.5 rounded-xl border border-slate-700 text-xs font-mono">
+              <button
+                @click="editorMode = 'split'"
+                :class="editorMode === 'split' ? 'bg-cyan-950/80 text-cyan-200 border border-cyan-500/50 font-bold shadow-[0_0_8px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-slate-200'"
+                class="px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1"
+                title="Ver edición y coloreado simultáneamente en pantalla dividida"
+              >
+                <span>⬛</span>
+                <span>Dividido</span>
+              </button>
               <button
                 @click="editorMode = 'edit'"
                 :class="editorMode === 'edit' ? 'bg-purple-950/80 text-purple-200 border border-purple-500/50 font-bold' : 'text-slate-400 hover:text-slate-200'"
                 class="px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1"
-                title="Editar código fuente (presione Tab para indentar)"
+                title="Solo editor interactivo (presione Tab para indentar)"
               >
                 <span>✏️</span>
                 <span>Editor</span>
               </button>
               <button
                 @click="editorMode = 'preview'"
-                :class="editorMode === 'preview' ? 'bg-cyan-950/80 text-cyan-200 border border-cyan-500/50 font-bold shadow-[0_0_10px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-slate-200'"
+                :class="editorMode === 'preview' ? 'bg-purple-950/80 text-purple-200 border border-purple-500/50 font-bold' : 'text-slate-400 hover:text-slate-200'"
                 class="px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1"
-                title="Ver código fuente con resaltado sintáctico cromático"
+                title="Solo vista coloreada con resaltado sintáctico cromático"
               >
                 <span>🎨</span>
                 <span>Coloreado</span>
               </button>
             </div>
 
-            <span class="text-xs font-mono hidden sm:inline" :class="isCustom ? 'text-cyan-300 font-bold' : 'text-purple-300'">
-              {{ isCustom ? '✏️ Personalizado' : currentPreset.category }}
-            </span>
+            <!-- Selector de Altura del Editor (más espacio) -->
+            <div class="flex items-center gap-1 bg-slate-900 p-0.5 rounded-xl border border-slate-800 text-[11px] font-mono">
+              <span class="text-slate-500 pl-1 text-[10px]">↕ Altura:</span>
+              <button
+                v-for="h in [380, 520, 680]"
+                :key="h"
+                @click="editorHeight = h"
+                :class="editorHeight === h ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40' : 'text-slate-400 hover:text-white'"
+                class="px-1.5 py-0.5 rounded text-[10px] transition cursor-pointer"
+              >
+                {{ h }}px
+              </button>
+            </div>
+
+            <!-- Botón de Expandir / Reducir ancho del editor -->
+            <button
+              @click="editorExpanded = !editorExpanded"
+              :class="editorExpanded ? 'bg-cyan-900/60 text-cyan-200 border-cyan-500/50' : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'"
+              class="px-2.5 py-1 rounded-xl border text-[11px] font-mono transition cursor-pointer flex items-center gap-1"
+              :title="editorExpanded ? 'Reducir a vista de 2 columnas' : 'Expandir editor al ancho completo de la pantalla'"
+            >
+              <span>{{ editorExpanded ? '⤡ Normal' : '⤢ Pantalla Ancha' }}</span>
+            </button>
           </div>
         </div>
 
+        <!-- Contenedor del Editor / Coloreado con Altura Dinámica -->
         <div class="relative rounded-2xl border border-slate-700/80 bg-[#080d1a] overflow-hidden shadow-inner focus-within:border-cyan-400 transition">
-          <!-- Modo Editor Editable con Soporte para Tecla Tab -->
-          <textarea
-            v-if="editorMode === 'edit'"
-            v-model="sourceCode"
-            @keydown="onKeydown"
-            rows="19"
-            spellcheck="false"
-            class="w-full bg-transparent p-4 font-mono text-xs sm:text-sm text-cyan-200 leading-relaxed focus:outline-none resize-y selection:bg-cyan-500 selection:text-slate-950"
-            placeholder="// Escriba su clase, métodos, condicionales o recursión... (Presione Tab para indentar)"
-          ></textarea>
-
-          <!-- Modo Vista Previa con Resaltado Sintáctico Cromático de Alto Nivel -->
+          <!-- 1. MODO DIVIDIDO: Edición a la izquierda + Coloreado en vivo a la derecha -->
           <div
-            v-else
-            class="h-[410px] overflow-y-auto p-4 font-mono text-xs sm:text-sm leading-relaxed space-y-0.5 select-text bg-[#080d1a]"
+            v-if="editorMode === 'split'"
+            class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-800"
+            :style="{ minHeight: `${editorHeight}px` }"
           >
+            <!-- Subcolumna izquierda: Textarea editable -->
+            <div class="flex flex-col">
+              <div class="px-3 py-1.5 bg-[#090f20] border-b border-slate-800 text-[11px] font-mono text-slate-400 flex items-center justify-between">
+                <span class="flex items-center gap-1.5 text-cyan-300 font-bold">
+                  <span>✏️</span> Editor Interactivo
+                </span>
+                <span class="text-[10px] text-slate-500">Tab = Indentar</span>
+              </div>
+              <textarea
+                v-model="sourceCode"
+                @keydown="onKeydown"
+                spellcheck="false"
+                class="w-full flex-1 bg-transparent p-3.5 font-mono text-xs sm:text-sm text-cyan-200 leading-relaxed focus:outline-none resize-none selection:bg-cyan-500 selection:text-slate-950 overflow-y-auto"
+                :style="{ height: `${editorHeight - 34}px` }"
+                placeholder="// Escriba su clase, métodos, condicionales o recursión..."
+              ></textarea>
+            </div>
+
+            <!-- Subcolumna derecha: Coloreado en tiempo real -->
+            <div class="flex flex-col bg-[#060a14]">
+              <div class="px-3 py-1.5 bg-[#090f20] border-b border-slate-800 text-[11px] font-mono text-slate-400 flex items-center justify-between">
+                <span class="flex items-center gap-1.5 text-purple-300 font-bold">
+                  <span>🎨</span> Coloreado Cromático en Vivo
+                </span>
+                <span class="text-[10px] text-slate-500">{{ sourceCodeLines.length }} líneas</span>
+              </div>
+              <div
+                class="flex-1 overflow-y-auto p-3.5 font-mono text-xs sm:text-sm leading-relaxed space-y-0.5 select-text"
+                :style="{ height: `${editorHeight - 34}px` }"
+              >
+                <div
+                  v-for="(line, lIdx) in sourceCodeLines"
+                  :key="lIdx"
+                  class="flex items-start gap-2 hover:bg-slate-900/60 px-1 py-0.2 rounded"
+                >
+                  <span class="text-xs text-slate-600 w-7 select-none text-right shrink-0 font-mono">{{ lIdx + 1 }}.</span>
+                  <span v-html="highlightGenericLine(line)" class="whitespace-pre font-mono flex-1"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. MODO SOLO EDITOR -->
+          <div v-else-if="editorMode === 'edit'" class="flex flex-col" :style="{ minHeight: `${editorHeight}px` }">
+            <div class="px-3 py-1.5 bg-[#090f20] border-b border-slate-800 text-[11px] font-mono text-slate-400 flex items-center justify-between">
+              <span class="flex items-center gap-1.5 text-cyan-300 font-bold">
+                <span>✏️</span> Editor Interactivo de Alto Nivel
+              </span>
+              <span class="text-[10px] text-slate-500">Soporte Tabulador | Arrastre esquina inferior para redimensionar</span>
+            </div>
+            <textarea
+              v-model="sourceCode"
+              @keydown="onKeydown"
+              spellcheck="false"
+              class="w-full flex-1 bg-transparent p-4 font-mono text-xs sm:text-sm text-cyan-200 leading-relaxed focus:outline-none resize-y selection:bg-cyan-500 selection:text-slate-950"
+              :style="{ minHeight: `${editorHeight - 34}px` }"
+              placeholder="// Escriba su clase, métodos, condicionales o recursión... (Presione Tab para indentar)"
+            ></textarea>
+          </div>
+
+          <!-- 3. MODO SOLO COLOREADO -->
+          <div v-else class="flex flex-col bg-[#060a14]" :style="{ minHeight: `${editorHeight}px` }">
+            <div class="px-3 py-1.5 bg-[#090f20] border-b border-slate-800 text-[11px] font-mono text-slate-400 flex items-center justify-between">
+              <span class="flex items-center gap-1.5 text-purple-300 font-bold">
+                <span>🎨</span> Resaltado Sintáctico Cromático de Alto Nivel
+              </span>
+              <span class="text-[10px] text-slate-500">{{ sourceCodeLines.length }} líneas analizadas</span>
+            </div>
             <div
-              v-for="(line, lIdx) in sourceCodeLines"
-              :key="lIdx"
-              class="flex items-start gap-3 hover:bg-slate-900/60 px-1 py-0.2 rounded"
+              class="overflow-y-auto p-4 font-mono text-xs sm:text-sm leading-relaxed space-y-0.5 select-text"
+              :style="{ height: `${editorHeight - 34}px` }"
             >
-              <span class="text-xs text-slate-500 w-8 select-none text-right shrink-0 font-mono">{{ lIdx + 1 }}.</span>
-              <span v-html="highlightGenericLine(line)" class="whitespace-pre font-mono flex-1"></span>
+              <div
+                v-for="(line, lIdx) in sourceCodeLines"
+                :key="lIdx"
+                class="flex items-start gap-3 hover:bg-slate-900/60 px-1 py-0.2 rounded"
+              >
+                <span class="text-xs text-slate-500 w-8 select-none text-right shrink-0 font-mono">{{ lIdx + 1 }}.</span>
+                <span v-html="highlightGenericLine(line)" class="whitespace-pre font-mono flex-1"></span>
+              </div>
             </div>
           </div>
         </div>
@@ -139,7 +237,7 @@
       </div>
 
       <!-- Columna Derecha: Pipeline de Salida Multi-Pestaña -->
-      <div class="lg:col-span-7 space-y-3">
+      <div :class="editorExpanded ? 'lg:col-span-12' : 'lg:col-span-7'" class="space-y-3 transition-all duration-300">
         <!-- Pestañas de las 4 Fases de Salida -->
         <div class="flex border-b border-slate-800 text-xs font-mono overflow-x-auto gap-1">
           <button
@@ -333,10 +431,8 @@ const presets: PresetItem[] = [
     badge: '1. POO & Puntero this',
     category: 'Programación Orientada a Objetos',
     academicNote: 'En POO, la invocación de un método traduce el puntero "this" implícito al primer argumento (registro a0). Los atributos del objeto residen en memoria Heap (a partir de 0x1000) y se acceden mediante direccionamiento indexado offset(this), evitando duplicar la clase en la pila.',
-    code: `// ============================================================================
-// Caso 1: Programación Orientada a Objetos con Atributos en Memoria Heap
+    code: `// Caso 1: Programación Orientada a Objetos con Atributos en Memoria Heap
 // El puntero 'this' se transfiere en el registro ABI a0 como primer argumento.
-// ============================================================================
 class CuentaBancaria {
     int saldo;        // Reside en Heap: offset 0 respecto a this
     int titularId;    // Reside en Heap: offset 4 respecto a this
@@ -367,34 +463,52 @@ class CuentaBancaria {
       { addr: '0x1004', field: 'this.titularId (int32)', value: '48291' }
     ],
     c3dLines: [
+      '// Sitio de llamada (invocación con paso de parámetros)',
+      'param this                   // Parámetro 1: referencia a la instancia en Heap',
+      'param monto                  // Parámetro 2: valor a depositar',
+      't_ret = call CuentaBancaria_depositar, 2',
+      '',
       '// Subprograma: CuentaBancaria_depositar',
       'CuentaBancaria_depositar:',
       't0 = Heap[this + 0]          // Carga atributo this.saldo desde Heap',
-      't1 = t0 + monto             // Suma local',
-      'Heap[this + 0] = t1          // Actualiza atributo this.saldo en Heap',
-      'return t1                    // Retorna nuevo saldo',
+      't1 = t0 + monto              // Suma saldo actual y monto recibido',
+      'Heap[this + 0] = t1          // Almacena nuevo saldo en Heap',
+      'return t1                    // Retorna nuevo saldo en a0',
+      '',
+      '// Sitio de llamada (invocación a transferir)',
+      'param this                   // Parámetro 1: referencia al objeto',
+      'param destinoId              // Parámetro 2: id destino',
+      'param monto                  // Parámetro 3: monto a debitar',
+      't_ret2 = call CuentaBancaria_transferir, 3',
       '',
       '// Subprograma: CuentaBancaria_transferir',
       'CuentaBancaria_transferir:',
-      't2 = Heap[this + 0]          // Carga this.saldo',
+      't2 = Heap[this + 0]          // Carga this.saldo desde Heap',
       'if t2 >= monto goto L_SUFICIENTE',
-      'return 0                    // Fondos insuficientes',
+      'return 0                     // Fondos insuficientes',
       'L_SUFICIENTE:',
       't3 = t2 - monto',
-      'Heap[this + 0] = t3          // Descuenta saldo',
-      'return 1                    // Éxito en transferencia'
+      'Heap[this + 0] = t3          // Descuenta saldo en Heap',
+      'return 1                     // Éxito en transferencia'
     ],
     quadruples: [
-      { index: 1, op: '=[]', arg1: 'this', arg2: '0', dest: 't0' },
-      { index: 2, op: '+', arg1: 't0', arg2: 'monto', dest: 't1' },
-      { index: 3, op: '[]=', arg1: 'this', arg2: '0', dest: 't1' },
-      { index: 4, op: 'return', arg1: 't1', arg2: '-', dest: '-' },
-      { index: 5, op: '=[]', arg1: 'this', arg2: '0', dest: 't2' },
-      { index: 6, op: '>=', arg1: 't2', arg2: 'monto', dest: 'goto (8)' },
-      { index: 7, op: 'return', arg1: '0', arg2: '-', dest: '-' },
-      { index: 8, op: '-', arg1: 't2', arg2: 'monto', dest: 't3' },
-      { index: 9, op: '[]=', arg1: 'this', arg2: '0', dest: 't3' },
-      { index: 10, op: 'return', arg1: '1', arg2: '-', dest: '-' }
+      { index: 1, op: 'param', arg1: 'this', arg2: '-', dest: '-' },
+      { index: 2, op: 'param', arg1: 'monto', arg2: '-', dest: '-' },
+      { index: 3, op: 'call', arg1: 'depositar', arg2: '2', dest: 't_ret' },
+      { index: 4, op: '=[]', arg1: 'this', arg2: '0', dest: 't0' },
+      { index: 5, op: '+', arg1: 't0', arg2: 'monto', dest: 't1' },
+      { index: 6, op: '[]=', arg1: 'this', arg2: '0', dest: 't1' },
+      { index: 7, op: 'return', arg1: 't1', arg2: '-', dest: '-' },
+      { index: 8, op: 'param', arg1: 'this', arg2: '-', dest: '-' },
+      { index: 9, op: 'param', arg1: 'destinoId', arg2: '-', dest: '-' },
+      { index: 10, op: 'param', arg1: 'monto', arg2: '-', dest: '-' },
+      { index: 11, op: 'call', arg1: 'transferir', arg2: '3', dest: 't_ret2' },
+      { index: 12, op: '=[]', arg1: 'this', arg2: '0', dest: 't2' },
+      { index: 13, op: '>=', arg1: 't2', arg2: 'monto', dest: 'goto (15)' },
+      { index: 14, op: 'return', arg1: '0', arg2: '-', dest: '-' },
+      { index: 15, op: '-', arg1: 't2', arg2: 'monto', dest: 't3' },
+      { index: 16, op: '[]=', arg1: 'this', arg2: '0', dest: 't3' },
+      { index: 17, op: 'return', arg1: '1', arg2: '-', dest: '-' }
     ],
     riscvAssembly: `.globl CuentaBancaria_depositar
 CuentaBancaria_depositar:
@@ -424,10 +538,8 @@ CuentaBancaria_depositar:
     badge: '2. Recursión: Factorial',
     category: 'Llamadas Recursivas & Pila',
     academicNote: 'En funciones recursivas, cada llamada anidada crea un nuevo registro de activación en la pila. La convención exige preservar ra y s0/fp en cada nivel para que al alcanzar el caso base (n <= 1), la pila se desenrolle correctamente multiplicando hacia arriba.',
-    code: `// ============================================================================
-// Caso 2: Función Recursiva Simple - Cálculo de Factorial
+    code: `// Caso 2: Función Recursiva Simple - Cálculo de Factorial
 // Demuestra la preservación del marco de pila y el desenrollado LIFO.
-// ============================================================================
 class Matematicas {
     int factorial(int n) {
         // Caso base: 0! = 1! = 1
@@ -509,10 +621,8 @@ Matematicas_factorial:
     badge: '3. Recursión Doble: Fibonacci',
     category: 'Llamadas Múltiples en Árbol',
     academicNote: 'En algoritmos con ramificación recursiva como Fibonacci, cada marco de función debe realizar múltiples llamadas consecutivas (fib(n-1) y fib(n-2)), obligando a guardar en la pila local el resultado de la primera llamada mientras se ejecuta la segunda. El registro callee-saved s1 y la ranura -12(fp) protegen este valor.',
-    code: `// ============================================================================
-// Caso 3: Recursión Doble - Secuencia de Fibonacci
-// Muestra cómo el compilador gestiona marcos ramificados en árbol binario.
-// ============================================================================
+    code: `// Caso 3: Recursión Doble - Secuencia de Fibonacci
+// El compilador gestiona marcos ramificados en árbol binario
 class Algoritmos {
     // Calcula el n-ésimo término de Fibonacci: fib(n) = fib(n-1) + fib(n-2)
     int fibonacci(int n) {
@@ -541,30 +651,27 @@ class Algoritmos {
     ],
     heapLayout: [],
     c3dLines: [
-      '// ========================================================',
-      '// C3D: Subprograma Algoritmos_fibonacci',
-      '// Generado para arquitectura con Frame Pointer canónico',
-      '// ========================================================',
+      '// Subprograma: Algoritmos_fibonacci (con Frame Pointer canónico)',
       'Algoritmos_fibonacci:',
       '// Verificación de casos base (poda del árbol recursivo)',
       'if n <= 0 goto L_CERO       // Salto a caso base 0',
       'if n == 1 goto L_UNO        // Salto a caso base 1',
       '',
-      '// --- Primera llamada recursiva: fib(n - 1) (Rama Izquierda) ---',
+      '// Primera llamada recursiva: fib(n - 1) (Rama Izquierda)',
       't0 = n - 1                  // Prepara argumento rama izquierda',
       'param t0                    // Pasa t0 como primer argumento a0',
       't1 = call Algoritmos_fibonacci, 1 // t1 = fib(n - 1)',
       '',
-      '// --- Segunda llamada recursiva: fib(n - 2) (Rama Derecha) ---',
+      '// Segunda llamada recursiva: fib(n - 2) (Rama Derecha)',
       't2 = n - 2                  // Prepara argumento rama derecha',
       'param t2                    // Pasa t2 como primer argumento a0',
       't3 = call Algoritmos_fibonacci, 1 // t3 = fib(n - 2)',
       '',
-      '// --- Suma de ambas ramas del árbol y retorno ---',
+      '// Suma de ambas ramas del árbol y retorno',
       't4 = t1 + t3                // t4 = fib(n-1) + fib(n-2)',
       'return t4                   // Retorna resultado acumulado a0',
       '',
-      '// --- Puntos de retorno de casos base ---',
+      '// Puntos de retorno de casos base',
       'L_CERO:',
       'return 0                    // Retorna caso base n <= 0',
       'L_UNO:',
@@ -588,10 +695,7 @@ class Algoritmos {
     ],
     riscvAssembly: `.globl Algoritmos_fibonacci
 Algoritmos_fibonacci:
-    # =========================================================================
-    # 1. PRÓLOGO CANÓNICO: Reserva marco de 32 bytes (múltiplo de 16)
-    #    Salva ra, s0 (Frame Pointer) y s1 (registro callee-saved)
-    # =========================================================================
+    # 1. Prólogo canónico: Reserva marco de 32 bytes y salva ra, s0 y s1
     addi sp, sp, -32        # Decrementa SP: reserva marco de activación
     sw ra, 28(sp)           # Preserva dirección de retorno ra en offset 28
     sw s0, 24(sp)           # Preserva Frame Pointer del llamador en offset 24
@@ -599,32 +703,23 @@ Algoritmos_fibonacci:
     addi s0, sp, 32         # Establece nuevo Frame Pointer anclado en la base
     sw a0, -8(s0)           # Guarda argumento n (a0) en la ranura local -8(fp)
 
-    # =========================================================================
-    # 2. EVALUACIÓN DE CASOS BASE
-    # =========================================================================
+    # 2. Evaluación de casos base
     lw t0, -8(s0)           # Carga parámetro n desde la pila local a t0
     blez t0, .L_FIB_ZERO    # Si n <= 0, salta a retornar 0
     li t1, 1                # Carga constante 1 para comparación
     beq t0, t1, .L_FIB_ONE  # Si n == 1, salta a retornar 1
 
-    # =========================================================================
-    # 3. PRIMERA LLAMADA RECURSIVA: fib(n - 1) (Rama Izquierda)
-    # =========================================================================
+    # 3. Primera llamada recursiva: fib(n - 1) (Rama Izquierda)
     addi a0, t0, -1         # Prepara argumento para hijo izquierdo: a0 = n - 1
     jal ra, Algoritmos_fibonacci # Salta y enlaza (ra = PC + 4, crea nuevo marco)
     mv s1, a0               # PROTEGE resultado en s1 (callee-saved resiste llamadas)
 
-    # =========================================================================
-    # 4. SEGUNDA LLAMADA RECURSIVA: fib(n - 2) (Rama Derecha)
-    # =========================================================================
+    # 4. Segunda llamada recursiva: fib(n - 2) (Rama Derecha)
     lw t0, -8(s0)           # RECUPERA n original de este marco (no el del hijo)
     addi a0, t0, -2         # Prepara argumento para hijo derecho: a0 = n - 2
     jal ra, Algoritmos_fibonacci # Salta y enlaza (segunda llamada recursiva)
-    # Al retornar, a0 contiene el resultado de fib(n - 2)
 
-    # =========================================================================
-    # 5. COMBINACIÓN DE RESULTADOS
-    # =========================================================================
+    # 5. Combinación de resultados
     add a0, s1, a0          # a0 = s1 (fib(n-1)) + a0 (fib(n-2))
     j .L_FIB_END            # Salta al epílogo común para retornar
 
@@ -636,9 +731,7 @@ Algoritmos_fibonacci:
     li a0, 1                # Caso base: valor de retorno = 1
 
 .L_FIB_END:
-    # =========================================================================
-    # 6. EPÍLOGO CANÓNICO: Restaura registros preservados y destruye marco
-    # =========================================================================
+    # 6. Epílogo canónico: Restaura registros preservados y destruye marco
     lw s1, 20(sp)           # Restaura s1 original del llamador
     lw s0, 24(sp)           # Restaura Frame Pointer original
     lw ra, 28(sp)           # Restaura dirección de retorno ra
@@ -650,11 +743,9 @@ Algoritmos_fibonacci:
     badge: '4. >8 Parámetros (Pila Positiva)',
     category: 'Convención ABI & Desbordamiento',
     academicNote: 'RISC-V dispone de exactamente 8 registros de argumentos (a0-a7). Si una función recibe 9 o más parámetros, el compilador los empuja a la pila en orden inverso antes de la llamada. Dentro de la función, estos argumentos adicionales se leen en offsets POSITIVOS respecto al Frame Pointer: 0(fp), 4(fp), etc.',
-    code: `// ============================================================================
-// Caso 4: Desbordamiento de Argumentos (>8 parámetros)
+    code: `// Caso 4: Desbordamiento de Argumentos (>8 parámetros)
 // Los primeros 8 parámetros se transmiten en registros a0 a a7.
 // Los parámetros adicionales se envían en la Pila Positiva (offsets >= 0(fp)).
-// ============================================================================
 class Facturacion {
     int liquidar(int p1, int p2, int p3, int p4, int p5, int p6, int p7, int p8, int extra1, int extra2) {
         int base = p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8;
@@ -722,10 +813,8 @@ Facturacion_liquidar:
     badge: '5. Programa Completo: Main & Arreglos',
     category: 'Arquitectura Integral de Programa',
     academicNote: 'Este laboratorio representa la integración completa de un compilador de producción: función "main" de inicio, asignación e indexación de arreglos unidimensionales en memoria Heap, llamadas a subprogramas con paso de parámetros, ciclos "while", condicionales "if-else", variables booleanas (true/false) y cadenas literales con salida a consola.',
-    code: `// ============================================================================
-// Caso 5: PROGRAMA INTEGRAL COMPLETO (Main, Funciones, Arreglos, Ciclos & Strings)
+    code: `// Caso 5: Programa Integral Completo (Main, Funciones, Arreglos, Ciclos & Strings)
 // Demuestra la coordinación completa entre el Stack Frame, el Heap y la sección .data
-// ============================================================================
 class SistemaEstadistico {
     int[] datos;           // Referencia al búfer de datos en memoria Heap
     int cantidad;          // Cantidad de elementos registrados en el sistema
@@ -806,9 +895,7 @@ class SistemaEstadistico {
       { addr: '0x1030', field: 'lista[4] (int32)', value: '15' }
     ],
     c3dLines: [
-      '// ================================================================',
-      '// C3D: Subprograma calcularSumaFiltrada(arr, n, umbral)',
-      '// ================================================================',
+      '// Subprograma calcularSumaFiltrada(arr, n, umbral)',
       'calcularSumaFiltrada:',
       'suma = 0',
       'i = 0',
@@ -842,9 +929,7 @@ class SistemaEstadistico {
       'L_RET_SUMA:',
       'return suma                 // Retorna total acumulado en a0',
       '',
-      '// ================================================================',
-      '// C3D: Subprograma Principal main()',
-      '// ================================================================',
+      '// Subprograma Principal main()',
       'main:',
       'Heap[this + 4] = 5           // this.cantidad = 5',
       'Heap[this + 8] = false       // this.procesado = false',
@@ -895,10 +980,8 @@ str_total:   .string "Total acumulado filtrado:"
 .globl main
 .globl calcularSumaFiltrada
 
-# =============================================================================
-# FUNCIÓN AUXILIAR: calcularSumaFiltrada(arr: a0, n: a1, umbral: a2)
+# Función auxiliar: calcularSumaFiltrada(arr: a0, n: a1, umbral: a2)
 # Registros ABI: a0=dir_arreglo, a1=tamaño, a2=umbral
-# =============================================================================
 calcularSumaFiltrada:
     # 1. Prólogo: Reserva 32 bytes y ancla Frame Pointer
     addi sp, sp, -32        # Reserva marco en la pila
@@ -964,9 +1047,7 @@ calcularSumaFiltrada:
     addi sp, sp, 32
     ret
 
-# =============================================================================
-# MÉTODO PRINCIPAL: main()
-# =============================================================================
+# Método principal: main()
 main:
     addi sp, sp, -32        # Marco de main
     sw ra, 28(sp)
@@ -1018,7 +1099,9 @@ main:
 
 const selectedPresetIdx = ref(0);
 const activeOutputTab = ref<'c3d' | 'cuartetas' | 'riscv' | 'memoria'>('c3d');
-const editorMode = ref<'edit' | 'preview'>('preview');
+const editorMode = ref<'split' | 'edit' | 'preview'>('split');
+const editorHeight = ref<number>(520);
+const editorExpanded = ref<boolean>(false);
 
 const currentPreset = computed(() => presets[selectedPresetIdx.value]);
 const sourceCode = ref(presets[0].code);

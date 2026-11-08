@@ -11,7 +11,7 @@
           Autoevaluación Integral de Compiladores
         </h3>
         <p class="text-xs sm:text-sm text-slate-400 mt-1">
-          25 reactivos de alto nivel académico con retroalimentación explicativa paso a paso según el programa del Ing. Mario Ramírez Tobar.
+          {{ exercises.length }} reactivos de alto nivel académico con retroalimentación explicativa paso a paso según el programa del Ing. Mario Ramírez Tobar.
         </p>
       </div>
 

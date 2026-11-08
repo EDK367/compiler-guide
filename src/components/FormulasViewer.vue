@@ -82,8 +82,11 @@
           v-for="formula in filteredFormulas"
           :key="formula.id"
           :id="formula.id"
-          class="bg-[#0d1527] rounded-2xl border border-slate-800 hover:border-cyan-500/30 p-4 sm:p-6 shadow-xl space-y-5 scroll-mt-20 transition duration-200"
+          class="bg-gradient-to-b from-[#0d162a] to-[#090e1a] rounded-2xl border border-slate-800/90 hover:border-cyan-500/40 p-4 sm:p-6 shadow-xl space-y-5 scroll-mt-20 transition-all duration-200 relative overflow-hidden group"
         >
+          <!-- Brillo de acento superior sutil -->
+          <div class="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent group-hover:via-cyan-400 transition-all"></div>
+
           <!-- Encabezado de Fórmula -->
           <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
             <div class="flex items-center gap-2">
@@ -97,7 +100,7 @@
           </div>
 
           <!-- Renderizado de la Expresión Matemática -->
-          <div class="p-4 sm:p-5 bg-[#080d1a] rounded-xl border border-slate-800/80 overflow-x-auto text-center shadow-inner">
+          <div class="p-4 sm:p-5 bg-gradient-to-b from-[#070b16] to-[#040710] rounded-xl border border-slate-800/80 overflow-x-auto text-center shadow-inner">
             <div class="inline-block text-cyan-200 text-sm sm:text-base" v-html="renderLatexDisplay(formula.latex)"></div>
           </div>
 

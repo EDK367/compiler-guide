@@ -486,5 +486,305 @@ export const EXERCISES: ExerciseItem[] = [
     correctAnswer: 'a',
     hint: 'El código muerto es aquel cuyo cómputo no afecta en absoluto la salida observable del programa.',
     explanation: 'Una asignación es código muerto si la variable `x` es "muerta" (su valor nunca se utilizará antes de ser sobreescrito o antes de finalizar la función) y la expresión de la derecha no posee efectos colaterales (llamadas a subprogramas con mutación de memoria o I/O).'
+  },
+
+  // --- C3D: PREGUNTAS ADICIONALES (MÓDULO 5) ---
+  {
+    id: 'ex-26',
+    moduleNumber: 5,
+    category: 'C3D',
+    difficulty: 'Intermedio',
+    title: 'Generación C3D para sentencia while',
+    description: 'Para el ciclo `while (i < n) { suma = suma + arr[i]; i = i + 1; }`, ¿cuál es la estructura canónica de etiquetas e instrucciones C3D?',
+    type: 'multiple-choice',
+    options: [
+      { id: 'a', text: 'L_TEST: if i >= n goto L_END; t0 = i * 4; t1 = arr + t0; t2 = Heap[t1]; suma = suma + t2; i = i + 1; goto L_TEST; L_END:' },
+      { id: 'b', text: 'while_start: suma = suma + arr[i]; if i < n goto while_start' },
+      { id: 'c', text: 'for i = 0 to n: suma += arr[i]' },
+      { id: 'd', text: 'L_END: if i >= n return; L_TEST: suma = suma + arr[i]; i = i + 1' }
+    ],
+    correctAnswer: 'a',
+    hint: 'El while se descompone en: etiqueta de evaluación inicial, salto condicional de salida invertido con goto, cuerpo y goto de retorno al test.',
+    explanation: 'En Código de Tres Direcciones, un bucle while se lineariza así: 1) Etiqueta de inicio `L_TEST`, 2) Condición invertida con salto a la salida `if i >= n goto L_END`, 3) Cuerpo del ciclo (con cálculo aplanado de desplazamiento arr[i] en Heap), 4) `goto L_TEST` para reevaluar, 5) Etiqueta `L_END` para continuar la ejecución secuencial.'
+  },
+  {
+    id: 'ex-27',
+    moduleNumber: 5,
+    category: 'C3D',
+    difficulty: 'Avanzado',
+    title: 'Instrucción param y call en invocaciones C3D',
+    description: '¿Cuál es la función exacta de `param t0; param t1; t2 = call func, 2` en C3D y cuándo se emite?',
+    type: 'multiple-choice',
+    options: [
+      { id: 'a', text: 'Declara dos variables globales t0 y t1 en la cabecera de func.' },
+      { id: 'b', text: 'Se emite estrictamente en el sitio de llamada (caller) para pasar argumentos antes de invocar un subprograma o método, y el número 2 indica la cantidad de parámetros consumidos.' },
+      { id: 'c', text: 'Sirve para recibir parámetros dentro del cuerpo de la función llamada.' },
+      { id: 'd', text: 'Es una instrucción exclusiva de lenguajes interpretados sin tipado.' }
+    ],
+    correctAnswer: 'b',
+    hint: 'La instrucción `param` solo se usa cuando se invoca una función o método con argumentos (incluyendo llamadas recursivas), preparando los datos antes del `call`.',
+    explanation: 'En C3D, `param` NO se utiliza dentro del cuerpo de la función para declarar variables receptoras; se emite únicamente en el sitio de llamada (`caller`) antes de la instrucción `call`. La instrucción `t2 = call func, 2` consume los 2 `param` previos y asigna el retorno en `t2`.'
+  },
+  {
+    id: 'ex-28',
+    moduleNumber: 5,
+    category: 'C3D',
+    difficulty: 'Avanzado',
+    title: 'Acceso a atributos en POO con Heap en C3D',
+    description: 'En un método de clase, la asignación `this.saldo = this.saldo + monto` (donde `saldo` reside en el offset 0 de la instancia en Heap), ¿cómo se traduce a C3D cumpliendo el principio de máximo 3 accesos?',
+    codeSnippet: `// this: referencia a la instancia en Heap
+// saldo: offset 0
+// monto: parámetro local`,
+    type: 'multiple-choice',
+    options: [
+      { id: 'a', text: 'this.saldo = this.saldo + monto' },
+      { id: 'b', text: 't0 = Heap[this + 0]; t1 = t0 + monto; Heap[this + 0] = t1' },
+      { id: 'c', text: 'saldo = saldo + monto' },
+      { id: 'd', text: 't0 = *this; t0 = t0 + monto; *this = t0' }
+    ],
+    correctAnswer: 'b',
+    hint: 'Cada lectura y escritura en memoria Heap debe ser explícita mediante un temporal intermedio.',
+    explanation: 'De acuerdo con las reglas de C3D explicadas por el Ing. Mario Ramírez Tobar: 1) Se carga el atributo desde Heap a un temporal: `t0 = Heap[this + 0]`. 2) Se efectúa la suma puramente aritmética: `t1 = t0 + monto`. 3) Se escribe el resultado actualizado de vuelta a la memoria Heap: `Heap[this + 0] = t1`.'
+  },
+  {
+    id: 'ex-29',
+    moduleNumber: 5,
+    category: 'C3D',
+    difficulty: 'Intermedio',
+    title: 'Restricción de los 3 operandos en C3D',
+    description: '¿Cuál de las siguientes instrucciones viola formalmente la definición canónica de Código de Tres Direcciones?',
+    type: 'multiple-choice',
+    options: [
+      { id: 'a', text: 't1 = a + b' },
+      { id: 'b', text: 't2 = Heap[this + 4]' },
+      { id: 'c', text: 'x = a + b * c - d' },
+      { id: 'd', text: 'if t1 >= t2 goto L1' }
+    ],
+    correctAnswer: 'c',
+    hint: 'Una instrucción de C3D admite a lo sumo un operador y un resultado por sentencia.',
+    explanation: 'La instrucción `x = a + b * c - d` contiene tres operadores (`+`, `*`, `-`) y cuatro operandos fuente. El generador de C3D debe descomponerla obligatoriamente en pasos atómicos: `t1 = b * c`, `t2 = a + t1`, `x = t2 - d`.'
+  },
+  {
+    id: 'ex-30',
+    moduleNumber: 5,
+    category: 'C3D',
+    difficulty: 'Intermedio',
+    title: 'Codificación de booleanos (true/false) en C3D',
+    description: 'En el esquema de C3D de compiladores, ¿cómo se representan los valores booleanos en asignaciones y comparaciones condicionales?',
+    type: 'multiple-choice',
+    options: [
+      { id: 'a', text: 'Como cadenas de texto literales "true" y "false".' },
+      { id: 'b', text: 'Como enteros numéricos donde 1 representa true y 0 representa false, permitiendo saltos con `if var == 1 goto L_VERDADERO`.' },
+      { id: 'c', text: 'Como punteros nulos en el Heap.' },
+      { id: 'd', text: 'Como instrucciones ecall de parada de sistema.' }
+    ],
+    correctAnswer: 'b',
+    hint: 'En representaciones intermedias y de máquina, los valores de verdad se reducen a valores enteros de 32 bits.',
+    explanation: 'En C3D los booleanos se implementan canónicamente con la convención estándar: `false = 0` y `true = 1`. De este modo, `bandera = true` se procesa como `bandera = 1` y las condiciones se evalúan mediante comparaciones numéricas relacionales estándar.'
+  },
+  {
+    id: 'ex-31',
+    moduleNumber: 5,
+    category: 'C3D',
+    difficulty: 'Básico',
+    title: 'Naturaleza de los Temporales (t0, t1, t2...)',
+    description: '¿Qué representan conceptualmente las variables temporales generadas en C3D?',
+    type: 'multiple-choice',
+    options: [
+      { id: 'a', text: 'Registros fijos del microprocesador x0 a x31.' },
+      { id: 'b', text: 'Variables virtuales intermedias generadas por el compilador para almacenar valores parciales de expresiones, independientes de la arquitectura de destino.' },
+      { id: 'c', text: 'Constantes de la sección .rodata.' },
+      { id: 'd', text: 'Etiquetas de memoria RAM de solo lectura.' }
+    ],
+    correctAnswer: 'b',
+    hint: 'El código intermedio es independiente del hardware; los temporales luego se mapean a registros o ranuras de pila.',
+    explanation: 'Los temporales en C3D son variables ilimitadas abstractas creadas por el analizador semántico o generador de TAC. En una fase posterior de generación de código final (como RISC-V), el asignador de registros mapeará estos temporales a registros físicos reales (`t0-t6`, `s0-s11`) o a la pila.'
+  },
+
+  // --- RISC-V: PREGUNTAS ADICIONALES (MÓDULO 7) ---
+  {
+    id: 'ex-32',
+    moduleNumber: 7,
+    category: 'RISC-V',
+    difficulty: 'Intermedio',
+    title: 'Carga de datos: lw vs lb vs lh',
+    description: 'En la arquitectura RISC-V RV32I, ¿cuál es la diferencia entre `lw`, `lh` y `lb`?',
+    type: 'multiple-choice',
+    options: [
+      { id: 'a', text: 'lw carga 32 bits (palabra completa); lh carga 16 bits con extensión de signo; lb carga 8 bits con extensión de signo a los 32 bits del registro destino.' },
+      { id: 'b', text: 'lw carga solo enteros positivos; lb carga números con coma flotante.' },
+      { id: 'c', text: 'Las tres instrucciones cargan 32 bits sin ninguna diferencia en hardware.' },
+      { id: 'd', text: 'lb y lh solo pueden leer de la pila y nunca del Heap.' }
+    ],
+    correctAnswer: 'a',
+    hint: 'El sufijo denota el ancho en bytes: w = word (4 bytes), h = half-word (2 bytes), b = byte (1 byte).',
+    explanation: '`lw` (load word) carga 32 bits. `lh` (load half-word) carga 16 bits y extiende el bit 15 de signo a los 32 bits del registro destino. `lb` (load byte) carga 8 bits con extensión de signo. Para cargas sin signo existen las variantes `lhu` y `lbu`.'
+  },
+  {
+    id: 'ex-33',
+    moduleNumber: 7,
+    category: 'RISC-V',
+    difficulty: 'Avanzado',
+    title: 'Estructura del Prólogo y Epílogo Canónico con Frame Pointer',
+    description: 'En la convención de cátedra del Ing. Mario Ramírez Tobar, ¿cuál es la secuencia correcta del prólogo para una función que reserva marco en la pila?',
+    codeSnippet: `# Ejemplo de prólogo:
+addi sp, sp, -16
+sw ra, 12(sp)
+sw s0, 8(sp)
+addi s0, sp, 16`,
+    type: 'multiple-choice',
+    options: [
+      { id: 'a', text: 'Reserva 16 bytes (múltiplo de 16), resguarda la dirección de retorno ra, resguarda el Frame Pointer anterior s0 y ancla el nuevo s0 en la base del marco.' },
+      { id: 'b', text: 'Borra la memoria RAM y reinicia los registros temporales t0 a t6.' },
+      { id: 'c', text: 'Copia el contenido del Heap a la sección .text.' },
+      { id: 'd', text: 'Es un bucle infinito que comprueba desbordamientos de enteros.' }
+    ],
+    correctAnswer: 'a',
+    hint: 'La ABI exige alinear la pila a 16 bytes y salvar los registros de enlace dinámico antes de ejecutar el cuerpo.',
+    explanation: 'El prólogo canónico: 1) `addi sp, sp, -16` decrementa la pila en múltiplo de 16. 2) `sw ra, 12(sp)` guarda la dirección de retorno para volver con `ret`. 3) `sw s0, 8(sp)` preserva el FP del llamador. 4) `addi s0, sp, 16` establece el nuevo Frame Pointer desde donde se indexan variables locales con offsets negativos.'
+  },
+  {
+    id: 'ex-34',
+    moduleNumber: 7,
+    category: 'RISC-V',
+    difficulty: 'Intermedio',
+    title: 'Desplazamiento slli para indexación de arreglos',
+    description: 'En la traducción de `arr[i]` (donde cada elemento es int de 4 bytes), ¿por qué se utiliza `slli t3, t1, 2`?',
+    type: 'multiple-choice',
+    options: [
+      { id: 'a', text: 'Porque desplaza los bits de i dos posiciones a la izquierda, multiplicando i por 2^2 = 4 (el tamaño de cada int32) de forma óptima en 1 ciclo de reloj.' },
+      { id: 'b', text: 'Porque suma 2 al índice i para evitar desbordamiento.' },
+      { id: 'c', text: 'Porque divide i entre 4 para obtener la fila de la matriz.' },
+      { id: 'd', text: 'Porque en RISC-V las direcciones de memoria son impares.' }
+    ],
+    correctAnswer: 'a',
+    hint: 'Desplazar a la izquierda k bits equivale matemáticamente a multiplicar por 2^k.',
+    explanation: '`slli` (Shift Left Logical Immediate) desplaza el registro hacia la izquierda. Desplazar por 2 posiciones (`slli t3, t1, 2`) multiplica el índice por 4, calculando el desplazamiento en bytes exacto para un elemento int32 sin requerir una instrucción `mul` más costosa.'
+  },
+  {
+    id: 'ex-35',
+    moduleNumber: 7,
+    category: 'RISC-V',
+    difficulty: 'Avanzado',
+    title: 'Registros Callee-Saved vs Caller-Saved en la ABI',
+    description: 'Si una función recursiva o método modifica el registro `s1`, ¿qué obligación impone la convención ABI de RISC-V?',
+    type: 'multiple-choice',
+    options: [
+      { id: 'a', text: 'Ninguna; todos los registros se pueden sobreescribir libremente.' },
+      { id: 'b', text: 'Es un registro callee-saved (preservado por el llamado); la función debe respaldarlo en la pila en el prólogo y restaurar su valor original antes de retornar con `ret`.' },
+      { id: 'c', text: 'Debe emitir un ecall de error inmediatamente.' },
+      { id: 'd', text: 'Los registros s1 a s11 son de solo lectura y no se pueden escribir.' }
+    ],
+    correctAnswer: 'b',
+    hint: 'Los registros con prefijo `s` (saved) pertenecen al llamador y deben preservarse intactos.',
+    explanation: 'En RISC-V: los registros `t0-t6` y `a0-a7` son caller-saved (el llamador asume que pueden cambiar tras una llamada). En contraste, `s0-s11` son callee-saved: si la subrutina los utiliza (como en Fibonacci para guardar `fib(n-1)`), está obligada a guardarlos en su marco y restaurarlos antes del retorno.'
+  },
+  {
+    id: 'ex-36',
+    moduleNumber: 7,
+    category: 'RISC-V',
+    difficulty: 'Básico',
+    title: 'Expansión de la pseudoinstrucción ret',
+    description: '¿A qué instrucción base de hardware equivale la pseudoinstrucción `ret` en RISC-V?',
+    type: 'multiple-choice',
+    options: [
+      { id: 'a', text: 'jalr zero, ra, 0 (salto indirecto a la dirección en ra descartando el nuevo PC en zero).' },
+      { id: 'b', text: 'jal zero, 0' },
+      { id: 'c', text: 'lw pc, 0(sp)' },
+      { id: 'd', text: 'beq zero, zero, ra' }
+    ],
+    correctAnswer: 'a',
+    hint: 'El retorno utiliza el registro de enlace `ra` (x1) que guardó `PC + 4` durante el `jal`.',
+    explanation: 'La instrucción `ret` es un mnemónico ensamblador para `jalr zero, ra, 0`: transfiere el control de ejecución a la dirección apuntada por `ra` y descarta el guardado del siguiente enlace usando el registro `zero` (x0).'
+  },
+  {
+    id: 'ex-37',
+    moduleNumber: 7,
+    category: 'RISC-V',
+    difficulty: 'Intermedio',
+    title: 'Llamadas al sistema (ecall) para impresión y salida',
+    description: 'En el entorno de ejecución de RISC-V, ¿cuál es el procedimiento estándar para invocar un servicio del sistema mediante `ecall`?',
+    type: 'multiple-choice',
+    options: [
+      { id: 'a', text: 'Cargar los argumentos en `a0-a2`, colocar el código del servicio solicitado en `a7` y ejecutar la instrucción `ecall`.' },
+      { id: 'b', text: 'Escribir el texto directamente en el puerto 80 del procesador con `out`.' },
+      { id: 'c', text: 'Hacer un salto `jal` a la dirección 0x00000000.' },
+      { id: 'd', text: 'Modificar el registro Frame Pointer s0 a 0.' }
+    ],
+    correctAnswer: 'a',
+    hint: 'El registro `a7` contiene el número de llamada al sistema (syscall ID) y `a0` el argumento principal.',
+    explanation: 'La convención de syscalls en RISC-V estipula: colocar el número de servicio en el registro `a7` (ej. 4 para print_string, 1 para print_int, 10 para exit), los argumentos en `a0` (ej. dirección de la cadena cargada con `la a0, str`) y disparar la excepción controlada con `ecall`.'
+  },
+  {
+    id: 'ex-38',
+    moduleNumber: 7,
+    category: 'RISC-V',
+    difficulty: 'Avanzado',
+    title: 'Multiplicación entera y la Extensión M (RV32M)',
+    description: '¿Qué instrucción realiza la multiplicación de 32 bits con resultado de 32 bits en RISC-V y cuál es su formato?',
+    type: 'multiple-choice',
+    options: [
+      { id: 'a', text: 'mul rd, rs1, rs2 — Instrucción Tipo-R de la extensión estándar M de hardware.' },
+      { id: 'b', text: 'mult rd, imm — Instrucción Tipo-I' },
+      { id: 'c', text: 'imul rd, rs1, rs2, rs3 — Instrucción Tipo-J' },
+      { id: 'd', text: 'RISC-V no admite multiplicación en hardware; siempre se emulan sumas sucesivas.' }
+    ],
+    correctAnswer: 'a',
+    hint: 'La extensión M añade multiplicación y división en formato Registro-Registro (Tipo-R).',
+    explanation: '`mul rd, rs1, rs2` pertenece a la extensión estándar RV32M. Multiplica los registros rs1 y rs2 y almacena los 32 bits menos significativos del producto en rd. Es una instrucción de formato Tipo-R con opcode `0110011` y funct3 `000`.'
+  },
+  {
+    id: 'ex-39',
+    moduleNumber: 7,
+    category: 'RISC-V',
+    difficulty: 'Intermedio',
+    title: 'Directivas esenciales: .data, .text, .globl y .string',
+    description: '¿Cuál es el propósito exacto de las directivas `.data`, `.text`, `.globl` y `.string` en un archivo ensamblador?',
+    type: 'multiple-choice',
+    options: [
+      { id: 'a', text: '.data abre el segmento de datos estáticos/cadenas; .text abre la sección de instrucciones ejecutables; .globl exporta un símbolo al enlazador; .string define una cadena terminada en byte nulo (0x00).' },
+      { id: 'b', text: 'Son comandos del sistema operativo que formatean el disco duro.' },
+      { id: 'c', text: 'Son instrucciones de la ALU ejecutadas por la CPU en tiempo de ejecución.' },
+      { id: 'd', text: 'Son palabras reservadas de Java que se conservan en ensamblador.' }
+    ],
+    correctAnswer: 'a',
+    hint: 'Las directivas del ensamblador empiezan con punto (.) y no generan instrucciones directas de CPU sino que guían la organización del archivo objeto.',
+    explanation: 'Las directivas organizan la estructura del binario: `.data` reserva memoria para literales constantes y variables globales, `.string "..."` genera los bytes de la cadena seguidos de `\\0`, `.text` ubica el código en la memoria de instrucciones y `.globl nombre` publica el símbolo para que el enlazador (linker) resuelva su dirección externa.'
+  },
+  {
+    id: 'ex-40',
+    moduleNumber: 7,
+    category: 'RISC-V',
+    difficulty: 'Avanzado',
+    title: 'Paso de más de 8 argumentos y Pila Positiva',
+    description: 'Cuando una función tiene 10 parámetros enteros en RISC-V, ¿por qué los parámetros 9 y 10 se leen con offsets positivos como `0(fp)` y `4(fp)`?',
+    type: 'multiple-choice',
+    options: [
+      { id: 'a', text: 'Porque el llamador los empujó en su marco de pila antes de la llamada, quedando físicamente por encima del nuevo Frame Pointer anclado en el prólogo.' },
+      { id: 'b', text: 'Porque los offsets negativos están prohibidos por el microprocesador.' },
+      { id: 'c', text: 'Porque se almacenan en el registro program counter.' },
+      { id: 'd', text: 'Es un error de compilación; ninguna función puede recibir más de 8 argumentos.' }
+    ],
+    correctAnswer: 'a',
+    hint: 'Los primeros 8 argumentos se transfieren en `a0-a7`. Los excedentes los empuja el llamador a la pila antes del salto.',
+    explanation: 'La convención de llamada estipula que los argumentos que desbordan los 8 registros ABI (`a0-a7`) se colocan en la pila del llamador. Cuando la función llamada ejecuta su prólogo y establece `s0 = sp`, esos argumentos quedan en la región superior a la base del marco, leyéndose con offsets positivos: `0(s0)`, `4(s0)`, etc.'
+  },
+  {
+    id: 'ex-41',
+    moduleNumber: 7,
+    category: 'RISC-V',
+    difficulty: 'Intermedio',
+    title: 'Diferencia de control: jal vs j',
+    description: '¿Por qué para invocar un subprograma se debe usar `jal` y no `j`?',
+    type: 'multiple-choice',
+    options: [
+      { id: 'a', text: 'Porque `jal` almacena la dirección de retorno (PC + 4) en el registro `ra`, permitiendo al subprograma regresar con `ret` al terminar.' },
+      { id: 'b', text: 'Porque `j` solo funciona si la función está en la misma línea de código.' },
+      { id: 'c', text: 'Porque `jal` ejecuta la función en modo de 64 bits.' },
+      { id: 'd', text: 'Porque `j` desactiva las interrupciones del procesador.' }
+    ],
+    correctAnswer: 'a',
+    hint: 'La letra "l" en `jal` significa "Link" (enlazar la dirección de retorno en el registro de enlace).',
+    explanation: '`j etiqueta` es un salto incondicional puro (equivalente a `goto`) que descarta la dirección de retorno (`jal zero, offset`). Para invocar funciones o métodos es indispensable `jal ra, funcion` (o pseudoinstrucción `call funcion`), que resguarda la dirección de la siguiente instrucción en `ra` para que el `ret` pueda regresar.'
   }
 ];
