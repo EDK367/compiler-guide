@@ -64,7 +64,25 @@
 
       <!-- Representación visual del código / datos en esta fase -->
       <div class="overflow-x-auto">
-        <pre class="font-mono text-xs p-4 bg-[#0a101f] rounded-xl border border-slate-800 text-cyan-200 leading-relaxed whitespace-pre-wrap">{{ currentCaseData.stageArtifacts[currentStage] }}</pre>
+        <pre
+          v-if="currentStage === 0"
+          v-html="highlightCode(currentCaseData.stageArtifacts[currentStage], 'c')"
+          class="font-mono text-xs sm:text-sm p-4 bg-[#0a101f] rounded-xl border border-slate-800 leading-relaxed whitespace-pre-wrap"
+        ></pre>
+        <pre
+          v-else-if="currentStage === 4"
+          v-html="highlightC3D(currentCaseData.stageArtifacts[currentStage])"
+          class="font-mono text-xs sm:text-sm p-4 bg-[#0a101f] rounded-xl border border-slate-800 leading-relaxed whitespace-pre-wrap"
+        ></pre>
+        <pre
+          v-else-if="currentStage === 5"
+          v-html="highlightRiscv(currentCaseData.stageArtifacts[currentStage])"
+          class="font-mono text-xs sm:text-sm p-4 bg-[#0a101f] rounded-xl border border-slate-800 leading-relaxed whitespace-pre-wrap"
+        ></pre>
+        <pre
+          v-else
+          class="font-mono text-xs sm:text-sm p-4 bg-[#0a101f] rounded-xl border border-slate-800 text-cyan-200 leading-relaxed whitespace-pre-wrap"
+        >{{ currentCaseData.stageArtifacts[currentStage] }}</pre>
       </div>
     </div>
 
@@ -97,6 +115,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { highlightCode, highlightC3D, highlightRiscv } from '../../utils/syntaxHighlight';
 
 const currentStage = ref(0);
 const selectedCaseIdx = ref(0);

@@ -51,10 +51,11 @@
         <div class="relative rounded-2xl border border-slate-700/80 bg-[#080d1a] overflow-hidden shadow-inner focus-within:border-cyan-400 transition">
           <textarea
             v-model="sourceCode"
+            @keydown="onKeydown"
             rows="18"
             spellcheck="false"
             class="w-full bg-transparent p-4 font-mono text-xs sm:text-sm text-cyan-200 leading-relaxed focus:outline-none resize-y selection:bg-cyan-500 selection:text-slate-950"
-            placeholder="// Escriba su clase, métodos, condicionales o recursión..."
+            placeholder="// Escriba su clase, métodos, condicionales o recursión... (Presione Tab para indentar)"
           ></textarea>
         </div>
 
@@ -269,6 +270,7 @@
 import { ref, computed } from 'vue';
 import { compileToC3D } from '../../utils/c3dParser';
 import { highlightC3DLine, highlightRiscvLine } from '../../utils/syntaxHighlight';
+import { handleTabIndent } from '../../utils/editorUtils';
 
 interface PresetItem {
   id: string;
@@ -721,5 +723,11 @@ function compileCustom() {
   setTimeout(() => {
     compileSuccessToast.value = false;
   }, 2500);
+}
+
+function onKeydown(e: KeyboardEvent) {
+  handleTabIndent(e, () => sourceCode.value, (val) => {
+    sourceCode.value = val;
+  });
 }
 </script>

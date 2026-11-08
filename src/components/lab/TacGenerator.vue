@@ -45,10 +45,11 @@
         <textarea
           v-model="inputCode"
           @input="generate"
+          @keydown="onKeydown"
           rows="5"
           spellcheck="false"
           class="w-full bg-transparent p-4 font-mono text-sm sm:text-base text-cyan-200 leading-relaxed focus:outline-none resize-y selection:bg-purple-500 selection:text-white"
-          placeholder="Ej: x =  5 + 1 > y * 2; o múltiples líneas de código..."
+          placeholder="Ej: x =  5 + 1 > y * 2; o múltiples líneas de código... (Presione Tab para indentar)"
         ></textarea>
       </div>
       <!-- Alerta de Error si ocurre -->
@@ -196,6 +197,7 @@
 import { ref, onMounted } from 'vue';
 import { compileToC3D, type TranslationResult } from '../../utils/c3dParser';
 import { highlightC3DLine, highlightRiscvLine } from '../../utils/syntaxHighlight';
+import { handleTabIndent } from '../../utils/editorUtils';
 
 const inputCode = ref('x =  5 + 1 > y * 2;');
 const activeTab = ref<'tac' | 'cuadruplas' | 'tripletas' | 'riscv'>('tac');
@@ -247,6 +249,13 @@ function formatTripleArg(arg: string): string {
     return `(${idx})`;
   }
   return arg;
+}
+
+function onKeydown(e: KeyboardEvent) {
+  handleTabIndent(e, () => inputCode.value, (val) => {
+    inputCode.value = val;
+    generate();
+  });
 }
 
 onMounted(() => {
