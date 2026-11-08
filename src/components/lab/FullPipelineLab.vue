@@ -50,31 +50,22 @@
           </div>
 
           <div class="flex flex-wrap items-center gap-2">
-            <!-- Alternador de Modo: Split (juntos) vs Solo Editor vs Solo Coloreado -->
-            <div class="flex items-center gap-0.5 bg-slate-900 p-0.5 rounded-xl border border-slate-700 text-xs font-mono">
-              <button
-                @click="editorMode = 'split'"
-                :class="editorMode === 'split' ? 'bg-cyan-950/80 text-cyan-200 border border-cyan-500/50 font-bold shadow-[0_0_8px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-slate-200'"
-                class="px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1"
-                title="Ver edición y coloreado simultáneamente en pantalla dividida"
-              >
-                <span>⬛</span>
-                <span>Dividido</span>
-              </button>
+            <!-- Alternador de Modo: Editor interactivo vs Código Coloreado -->
+            <div class="flex items-center gap-1 bg-slate-900 p-0.5 rounded-xl border border-slate-700 text-xs font-mono">
               <button
                 @click="editorMode = 'edit'"
                 :class="editorMode === 'edit' ? 'bg-purple-950/80 text-purple-200 border border-purple-500/50 font-bold' : 'text-slate-400 hover:text-slate-200'"
                 class="px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1"
-                title="Solo editor interactivo (presione Tab para indentar)"
+                title="Editar código fuente (presione Tab para indentar)"
               >
                 <span>✏️</span>
                 <span>Editor</span>
               </button>
               <button
                 @click="editorMode = 'preview'"
-                :class="editorMode === 'preview' ? 'bg-purple-950/80 text-purple-200 border border-purple-500/50 font-bold' : 'text-slate-400 hover:text-slate-200'"
+                :class="editorMode === 'preview' ? 'bg-cyan-950/80 text-cyan-200 border border-cyan-500/50 font-bold shadow-[0_0_10px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-slate-200'"
                 class="px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1"
-                title="Solo vista coloreada con resaltado sintáctico cromático"
+                title="Ver código fuente con resaltado sintáctico cromático"
               >
                 <span>🎨</span>
                 <span>Coloreado</span>
@@ -109,61 +100,13 @@
 
         <!-- Contenedor del Editor / Coloreado con Altura Dinámica -->
         <div class="relative rounded-2xl border border-slate-700/80 bg-[#080d1a] overflow-hidden shadow-inner focus-within:border-cyan-400 transition">
-          <!-- 1. MODO DIVIDIDO: Edición a la izquierda + Coloreado en vivo a la derecha -->
-          <div
-            v-if="editorMode === 'split'"
-            class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-800"
-            :style="{ minHeight: `${editorHeight}px` }"
-          >
-            <!-- Subcolumna izquierda: Textarea editable -->
-            <div class="flex flex-col">
-              <div class="px-3 py-1.5 bg-[#090f20] border-b border-slate-800 text-[11px] font-mono text-slate-400 flex items-center justify-between">
-                <span class="flex items-center gap-1.5 text-cyan-300 font-bold">
-                  <span>✏️</span> Editor Interactivo
-                </span>
-                <span class="text-[10px] text-slate-500">Tab = Indentar</span>
-              </div>
-              <textarea
-                v-model="sourceCode"
-                @keydown="onKeydown"
-                spellcheck="false"
-                class="w-full flex-1 bg-transparent p-3.5 font-mono text-xs sm:text-sm text-cyan-200 leading-relaxed focus:outline-none resize-none selection:bg-cyan-500 selection:text-slate-950 overflow-y-auto"
-                :style="{ height: `${editorHeight - 34}px` }"
-                placeholder="// Escriba su clase, métodos, condicionales o recursión..."
-              ></textarea>
-            </div>
-
-            <!-- Subcolumna derecha: Coloreado en tiempo real -->
-            <div class="flex flex-col bg-[#060a14]">
-              <div class="px-3 py-1.5 bg-[#090f20] border-b border-slate-800 text-[11px] font-mono text-slate-400 flex items-center justify-between">
-                <span class="flex items-center gap-1.5 text-purple-300 font-bold">
-                  <span>🎨</span> Coloreado Cromático en Vivo
-                </span>
-                <span class="text-[10px] text-slate-500">{{ sourceCodeLines.length }} líneas</span>
-              </div>
-              <div
-                class="flex-1 overflow-y-auto p-3.5 font-mono text-xs sm:text-sm leading-relaxed space-y-0.5 select-text"
-                :style="{ height: `${editorHeight - 34}px` }"
-              >
-                <div
-                  v-for="(line, lIdx) in sourceCodeLines"
-                  :key="lIdx"
-                  class="flex items-start gap-2 hover:bg-slate-900/60 px-1 py-0.2 rounded"
-                >
-                  <span class="text-xs text-slate-600 w-7 select-none text-right shrink-0 font-mono">{{ lIdx + 1 }}.</span>
-                  <span v-html="highlightGenericLine(line)" class="whitespace-pre font-mono flex-1"></span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 2. MODO SOLO EDITOR -->
-          <div v-else-if="editorMode === 'edit'" class="flex flex-col" :style="{ minHeight: `${editorHeight}px` }">
+          <!-- Modo Editor Editable con Soporte para Tecla Tab -->
+          <div v-if="editorMode === 'edit'" class="flex flex-col" :style="{ minHeight: `${editorHeight}px` }">
             <div class="px-3 py-1.5 bg-[#090f20] border-b border-slate-800 text-[11px] font-mono text-slate-400 flex items-center justify-between">
               <span class="flex items-center gap-1.5 text-cyan-300 font-bold">
                 <span>✏️</span> Editor Interactivo de Alto Nivel
               </span>
-              <span class="text-[10px] text-slate-500">Soporte Tabulador | Arrastre esquina inferior para redimensionar</span>
+              <span class="text-[10px] text-slate-500">Tab = Indentar | Arrastre esquina inferior para redimensionar</span>
             </div>
             <textarea
               v-model="sourceCode"
@@ -175,7 +118,7 @@
             ></textarea>
           </div>
 
-          <!-- 3. MODO SOLO COLOREADO -->
+          <!-- Modo Vista Previa con Resaltado Sintáctico Cromático -->
           <div v-else class="flex flex-col bg-[#060a14]" :style="{ minHeight: `${editorHeight}px` }">
             <div class="px-3 py-1.5 bg-[#090f20] border-b border-slate-800 text-[11px] font-mono text-slate-400 flex items-center justify-between">
               <span class="flex items-center gap-1.5 text-purple-300 font-bold">
@@ -1516,7 +1459,7 @@ main:
 
 const selectedPresetIdx = ref(0);
 const activeOutputTab = ref<'c3d' | 'cuartetas' | 'riscv' | 'memoria'>('c3d');
-const editorMode = ref<'split' | 'edit' | 'preview'>('split');
+const editorMode = ref<'edit' | 'preview'>('edit');
 const editorHeight = ref<number>(520);
 const editorExpanded = ref<boolean>(false);
 const c3dOptMode = ref<'unoptimized' | 'optimized' | 'diff'>('unoptimized');
