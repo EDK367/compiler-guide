@@ -159,7 +159,7 @@ export function highlightRiscvLine(line: string): string {
       continue;
     }
 
-    out += escapeHtml(ch);
+    out += `<span class="text-slate-200">${escapeHtml(ch)}</span>`;
     pos++;
   }
 
@@ -286,7 +286,7 @@ export function highlightC3DLine(line: string): string {
       continue;
     }
 
-    out += escapeHtml(ch);
+    out += `<span class="text-slate-200">${escapeHtml(ch)}</span>`;
     pos++;
   }
 
@@ -316,7 +316,7 @@ export function highlightGenericLine(line: string): string {
 
     // Comentario //
     if (ch === '/' && line[pos + 1] === '/') {
-      out += `<span class="text-slate-400 italic">${escapeHtml(line.slice(pos))}</span>`;
+      out += `<span class="text-emerald-400/80 italic">${escapeHtml(line.slice(pos))}</span>`;
       break;
     }
 
@@ -356,18 +356,18 @@ export function highlightGenericLine(line: string): string {
       } else if (word === 'null') {
         out += `<span class="text-amber-300 font-bold">${escapeHtml(word)}</span>`;
       } else if (word === 'this') {
-        out += `<span class="text-emerald-300 font-bold">${escapeHtml(word)}</span>`;
-      } else if (HIGH_LEVEL_TYPES.has(word)) {
-        out += `<span class="text-indigo-300 font-bold">${escapeHtml(word)}</span>`;
-      } else if (HIGH_LEVEL_KEYWORDS.has(word)) {
-        out += `<span class="text-purple-400 font-bold">${escapeHtml(word)}</span>`;
-      } else if (['System', 'out', 'println', 'print', 'printf', 'main'].includes(word)) {
         out += `<span class="text-cyan-300 font-bold">${escapeHtml(word)}</span>`;
+      } else if (HIGH_LEVEL_TYPES.has(word)) {
+        out += `<span class="text-sky-300 font-bold">${escapeHtml(word)}</span>`;
+      } else if (HIGH_LEVEL_KEYWORDS.has(word)) {
+        out += `<span class="text-purple-300 font-bold">${escapeHtml(word)}</span>`;
+      } else if (['System', 'out', 'println', 'print', 'printf', 'main'].includes(word)) {
+        out += `<span class="text-cyan-400 font-bold">${escapeHtml(word)}</span>`;
       } else if (pos < line.length && line[pos] === '(') {
         // Invocación o declaración de función/método
-        out += `<span class="text-cyan-200 font-semibold">${escapeHtml(word)}</span>`;
+        out += `<span class="text-sky-200 font-semibold">${escapeHtml(word)}</span>`;
       } else {
-        out += `<span class="text-sky-200">${escapeHtml(word)}</span>`;
+        out += `<span class="text-slate-100 font-medium">${escapeHtml(word)}</span>`;
       }
       continue;
     }
@@ -410,7 +410,7 @@ export function highlightGenericLine(line: string): string {
       continue;
     }
 
-    out += escapeHtml(ch);
+    out += `<span class="text-slate-200">${escapeHtml(ch)}</span>`;
     pos++;
   }
 

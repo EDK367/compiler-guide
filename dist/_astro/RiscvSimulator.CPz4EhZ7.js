@@ -1,4 +1,4 @@
-import{I as e,R as t,_ as n,a as r,d as i,i as a,o,p as s,s as c,t as l,v as u,x as d}from"./runtime-core.esm-bundler.38a7Ky-5.js";import{o as f}from"./syntaxHighlight.G9m-4a8p.js";import{t as p}from"./_plugin-vue_export-helper.BDNMzG2s.js";var ee=[{id:`aritmetica-fp`,title:`Aritmética y Asignación con Frame Pointer`,subtitle:`De C3D a instrucciones con ranuras de memoria fijas`,badge:`Aritmética`,highLevelCode:`// Código de Alto Nivel
+import{I as e,R as t,_ as n,a as r,d as i,i as a,o,p as s,s as c,t as l,v as u,x as d}from"./runtime-core.esm-bundler.38a7Ky-5.js";import{s as f}from"./syntaxHighlight.B6behnLa.js";import{t as p}from"./_plugin-vue_export-helper.BDNMzG2s.js";var ee=[{id:`aritmetica-fp`,title:`Aritmética y Asignación con Frame Pointer`,subtitle:`De C3D a instrucciones con ranuras de memoria fijas`,badge:`Aritmética`,highLevelCode:`// Código de Alto Nivel
 int a = 15;
 int x = 25 + 12 + a;
 int z = -x * 5 + 2;`,c3dCode:`// Código de Tres Direcciones (C3D)

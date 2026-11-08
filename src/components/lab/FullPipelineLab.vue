@@ -50,25 +50,25 @@
           </div>
 
           <div class="flex flex-wrap items-center gap-2">
-            <!-- Alternador de Modo: Editor interactivo vs Código Coloreado -->
+            <!-- Alternador de Modo: Editor interactivo coloreado vs Vista Lectura -->
             <div class="flex items-center gap-1 bg-slate-900 p-0.5 rounded-xl border border-slate-700 text-xs font-mono">
               <button
                 @click="editorMode = 'edit'"
-                :class="editorMode === 'edit' ? 'bg-purple-950/80 text-purple-200 border border-purple-500/50 font-bold' : 'text-slate-400 hover:text-slate-200'"
+                :class="editorMode === 'edit' ? 'bg-cyan-950/80 text-cyan-200 border border-cyan-500/50 font-bold shadow-[0_0_10px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-slate-200'"
                 class="px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1"
-                title="Editar código fuente (presione Tab para indentar)"
+                title="Editor interactivo con coloreado cromático en tiempo real al escribir"
               >
                 <span>✏️</span>
-                <span>Editor</span>
+                <span>Editor en Vivo</span>
               </button>
               <button
                 @click="editorMode = 'preview'"
-                :class="editorMode === 'preview' ? 'bg-cyan-950/80 text-cyan-200 border border-cyan-500/50 font-bold shadow-[0_0_10px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-slate-200'"
+                :class="editorMode === 'preview' ? 'bg-purple-950/80 text-purple-200 border border-purple-500/50 font-bold shadow-[0_0_10px_rgba(168,85,247,0.3)]' : 'text-slate-400 hover:text-slate-200'"
                 class="px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1"
-                title="Ver código fuente con resaltado sintáctico cromático"
+                title="Vista estática de lectura con resaltado de líneas"
               >
                 <span>🎨</span>
-                <span>Coloreado</span>
+                <span>Vista Lectura</span>
               </button>
             </div>
 
@@ -100,22 +100,60 @@
 
         <!-- Contenedor del Editor / Coloreado con Altura Dinámica -->
         <div class="relative rounded-2xl border border-slate-700/80 bg-[#080d1a] overflow-hidden shadow-inner focus-within:border-cyan-400 transition">
-          <!-- Modo Editor Editable con Soporte para Tecla Tab -->
+          <!-- Modo Editor Editable con Coloreado en Tiempo Real y Números de Línea -->
           <div v-if="editorMode === 'edit'" class="flex flex-col" :style="{ minHeight: `${editorHeight}px` }">
             <div class="px-3 py-1.5 bg-[#090f20] border-b border-slate-800 text-[11px] font-mono text-slate-400 flex items-center justify-between">
               <span class="flex items-center gap-1.5 text-cyan-300 font-bold">
-                <span>✏️</span> Editor Interactivo de Alto Nivel
+                <span>✏️</span> Editor Interactivo Coloreado en Vivo
               </span>
-              <span class="text-[10px] text-slate-500">Tab = Indentar | Arrastre esquina inferior para redimensionar</span>
+              <div class="flex items-center gap-3 text-[10px]">
+                <span class="text-emerald-400 font-semibold flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  Coloreado en vivo al escribir
+                </span>
+                <span class="text-slate-500 hidden sm:inline">Tab = Indentar</span>
+              </div>
             </div>
-            <textarea
-              v-model="sourceCode"
-              @keydown="onKeydown"
-              spellcheck="false"
-              class="w-full flex-1 bg-transparent p-4 font-mono text-xs sm:text-sm text-cyan-200 leading-relaxed focus:outline-none resize-y selection:bg-cyan-500 selection:text-slate-950"
-              :style="{ minHeight: `${editorHeight - 34}px` }"
-              placeholder="// Escriba su clase, métodos, condicionales o recursión... (Presione Tab para indentar)"
-            ></textarea>
+
+            <div class="flex-1 flex overflow-hidden relative" :style="{ height: `${editorHeight - 34}px` }">
+              <!-- Gutter de Números de Línea Sincronizado -->
+              <div
+                ref="editorGutterRef"
+                class="w-10 sm:w-12 shrink-0 pt-4 pb-4 select-none text-right pr-2.5 font-mono text-slate-600 bg-[#060a14] border-r border-slate-800/80 overflow-hidden"
+                aria-hidden="true"
+              >
+                <div
+                  v-for="(_, idx) in sourceCodeLines"
+                  :key="idx"
+                  class="code-gutter-line text-slate-500"
+                >
+                  {{ idx + 1 }}
+                </div>
+              </div>
+
+              <!-- Contenedor del Editor: Capa de Resaltado (fondo) + Textarea transparente (frente) -->
+              <div class="relative flex-1 h-full overflow-hidden bg-[#080d1a]">
+                <!-- Capa de Resaltado Sintáctico Cromático en Vivo -->
+                <pre
+                  ref="editorHighlightRef"
+                  aria-hidden="true"
+                  class="code-editor-surface absolute inset-0 m-0 p-4 overflow-hidden pointer-events-none select-none text-slate-100"
+                ><code class="code-editor-surface block" v-html="highlightedEditorCode"></code></pre>
+
+                <!-- Textarea Interactivo Transparente con Cursor y Selección Visibles -->
+                <textarea
+                  ref="editorTextareaRef"
+                  v-model="sourceCode"
+                  @keydown="onKeydown"
+                  @scroll="onEditorScroll"
+                  spellcheck="false"
+                  autocorrect="off"
+                  autocapitalize="off"
+                  class="code-editor-surface absolute inset-0 w-full h-full m-0 p-4 bg-transparent focus:outline-none resize-none overflow-auto text-transparent caret-cyan-400 placeholder:text-slate-500 selection:bg-cyan-500/30 selection:text-transparent"
+                  placeholder="// Escriba su clase, métodos, condicionales o recursión... (Presione Tab para indentar)"
+                ></textarea>
+              </div>
+            </div>
           </div>
 
           <!-- Modo Vista Previa con Resaltado Sintáctico Cromático -->
@@ -466,7 +504,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { compileToC3D } from '../../utils/c3dParser';
-import { highlightC3DLine, highlightRiscvLine, highlightGenericLine } from '../../utils/syntaxHighlight';
+import { highlightC3DLine, highlightRiscvLine, highlightGenericLine, highlightGeneric } from '../../utils/syntaxHighlight';
 import { handleTabIndent } from '../../utils/editorUtils';
 
 interface PresetItem {
@@ -1117,6 +1155,7 @@ class SistemaEstadistico {
         // 5. Salida por consola con cadenas literales y valores finales
         System.out.println("Procesamiento completado con exito");
         System.out.println("Total acumulado filtrado:");
+        System.out.println(total);
     }
 }`,
     stackLayout: [
@@ -1199,6 +1238,10 @@ class SistemaEstadistico {
       'Heap[this + 8] = 1           // this.procesado = true',
       'param "Procesamiento completado con exito" // Cadena en .data',
       'call printString, 1',
+      'param "Total acumulado filtrado:" // Mensaje descriptivo',
+      'call printString, 1',
+      'param total                  // Pasa total como argumento para imprimir',
+      'call printInt, 1',
       'return'
     ],
     c3dLinesUnoptimized: [
@@ -1261,6 +1304,10 @@ class SistemaEstadistico {
       'Heap[this + 8] = 1           // this.procesado = true',
       'param "Procesamiento completado con exito" // Cadena en .data',
       'call printString, 1',
+      'param "Total acumulado filtrado:" // Mensaje descriptivo',
+      'call printString, 1',
+      'param total                  // Pasa total como argumento para imprimir',
+      'call printInt, 1',
       'return'
     ],
     c3dLinesOptimized: [
@@ -1310,6 +1357,10 @@ class SistemaEstadistico {
       'Heap[this + 8] = 1',
       'param "Procesamiento completado con exito"',
       'call printString, 1',
+      'param "Total acumulado filtrado:"',
+      'call printString, 1',
+      'param total',
+      'call printInt, 1',
       'return'
     ],
     quadruples: [
@@ -1330,7 +1381,14 @@ class SistemaEstadistico {
       { index: 15, op: 'return', arg1: '-1', arg2: '-', dest: '-' },
       { index: 16, op: 'goto', arg1: '-', arg2: '-', dest: '(18)' },
       { index: 17, op: 'return', arg1: 'suma', arg2: '-', dest: '-' },
-      { index: 18, op: 'call', arg1: 'calcularSumaFiltrada', arg2: '3', dest: 'total' }
+      { index: 18, op: 'call', arg1: 'calcularSumaFiltrada', arg2: '3', dest: 'total' },
+      { index: 19, op: 'param', arg1: '"Procesamiento completado con exito"', arg2: '-', dest: '-' },
+      { index: 20, op: 'call', arg1: 'printString', arg2: '1', dest: '-' },
+      { index: 21, op: 'param', arg1: '"Total acumulado filtrado:"', arg2: '-', dest: '-' },
+      { index: 22, op: 'call', arg1: 'printString', arg2: '1', dest: '-' },
+      { index: 23, op: 'param', arg1: 'total', arg2: '-', dest: '-' },
+      { index: 24, op: 'call', arg1: 'printInt', arg2: '1', dest: '-' },
+      { index: 25, op: 'return', arg1: '-', arg2: '-', dest: '-' }
     ],
     riscvAssembly: `.data
 str_exito:   .string "Procesamiento completado con exito"
@@ -1438,15 +1496,26 @@ main:
     mv a0, s2               # a0 = dirección del arreglo (0x1020)
     lw a1, 4(s1)            # a1 = this.cantidad (5)
     li a2, 12               # a2 = umbral (12)
-    jal ra, calcularSumaFiltrada # Llamada a la función (retorna en a0)
+    jal ra, calcularSumaFiltrada # Llamada a la función (retorna suma en a0)
+    mv t3, a0               # Preserva valor acumulado (total = 80) en t3
 
     # Actualiza bandera this.procesado = true (1)
     li t2, 1
     sw t2, 8(s1)            # this.procesado = true en 0x1008
 
-    # Impresión de cadena de salida usando ecall del sistema
-    la a0, str_exito        # a0 = dirección de la cadena literal
+    # 1. Impresión de mensaje de éxito usando ecall del sistema
+    la a0, str_exito        # a0 = dirección "Procesamiento completado con exito"
     li a7, 4                # a7 = syscall 4 (print_string)
+    ecall
+
+    # 2. Impresión del rótulo de total acumulado filtrado
+    la a0, str_total        # a0 = dirección "Total acumulado filtrado:"
+    li a7, 4                # a7 = syscall 4 (print_string)
+    ecall
+
+    # 3. Impresión del valor entero del acumulador final
+    mv a0, t3               # a0 = total calculado (80)
+    li a7, 1                # a7 = syscall 1 (print_int)
     ecall
 
     # Epílogo de main
@@ -1620,13 +1689,51 @@ const activeHeapLayout = computed(() => {
   return currentPreset.value.heapLayout;
 });
 
+const editorTextareaRef = ref<HTMLTextAreaElement | null>(null);
+const editorHighlightRef = ref<HTMLElement | null>(null);
+const editorGutterRef = ref<HTMLElement | null>(null);
+
+const highlightedEditorCode = computed(() => {
+  const code = sourceCode.value;
+  if (!code) return '';
+  const highlighted = highlightGeneric(code);
+  return code.endsWith('\n') ? highlighted + '\n ' : highlighted;
+});
+
+function onEditorScroll(e: Event) {
+  const target = e.target as HTMLTextAreaElement;
+  if (editorHighlightRef.value) {
+    editorHighlightRef.value.scrollTop = target.scrollTop;
+    editorHighlightRef.value.scrollLeft = target.scrollLeft;
+  }
+  if (editorGutterRef.value) {
+    editorGutterRef.value.scrollTop = target.scrollTop;
+  }
+}
+
+function syncScrollToTop() {
+  if (editorTextareaRef.value) {
+    editorTextareaRef.value.scrollTop = 0;
+    editorTextareaRef.value.scrollLeft = 0;
+  }
+  if (editorHighlightRef.value) {
+    editorHighlightRef.value.scrollTop = 0;
+    editorHighlightRef.value.scrollLeft = 0;
+  }
+  if (editorGutterRef.value) {
+    editorGutterRef.value.scrollTop = 0;
+  }
+}
+
 function selectPreset(idx: number) {
   selectedPresetIdx.value = idx;
   sourceCode.value = presets[idx].code;
+  syncScrollToTop();
 }
 
 function resetToCurrentPreset() {
   sourceCode.value = currentPreset.value.code;
+  syncScrollToTop();
 }
 
 function compileCustom() {
@@ -1643,3 +1750,25 @@ function onKeydown(e: KeyboardEvent) {
   });
 }
 </script>
+
+<style scoped>
+.code-editor-surface {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+  font-size: 13px !important;
+  line-height: 22px !important;
+  letter-spacing: 0px !important;
+  tab-size: 2 !important;
+  -moz-tab-size: 2 !important;
+  box-sizing: border-box !important;
+  white-space: pre !important;
+  word-wrap: normal !important;
+  overflow-wrap: normal !important;
+}
+
+.code-gutter-line {
+  height: 22px !important;
+  line-height: 22px !important;
+  font-size: 12px !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+}
+</style>
