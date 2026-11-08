@@ -50,26 +50,10 @@
           </div>
 
           <div class="flex flex-wrap items-center gap-2">
-            <!-- Alternador de Modo: Editor interactivo coloreado vs Vista Lectura -->
-            <div class="flex items-center gap-1 bg-slate-900 p-0.5 rounded-xl border border-slate-700 text-xs font-mono">
-              <button
-                @click="editorMode = 'edit'"
-                :class="editorMode === 'edit' ? 'bg-cyan-950/80 text-cyan-200 border border-cyan-500/50 font-bold shadow-[0_0_10px_rgba(6,182,212,0.3)]' : 'text-slate-400 hover:text-slate-200'"
-                class="px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1"
-                title="Editor interactivo con coloreado cromático en tiempo real al escribir"
-              >
-                <span>✏️</span>
-                <span>Editor en Vivo</span>
-              </button>
-              <button
-                @click="editorMode = 'preview'"
-                :class="editorMode === 'preview' ? 'bg-purple-950/80 text-purple-200 border border-purple-500/50 font-bold shadow-[0_0_10px_rgba(168,85,247,0.3)]' : 'text-slate-400 hover:text-slate-200'"
-                class="px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1"
-                title="Vista estática de lectura con resaltado de líneas"
-              >
-                <span>🎨</span>
-                <span>Vista Lectura</span>
-              </button>
+            <!-- Indicador de Editor Único Coloreado -->
+            <div class="flex items-center gap-1.5 bg-slate-900 px-3 py-1 rounded-xl border border-cyan-500/30 text-xs font-mono text-cyan-300 font-semibold shadow-[0_0_10px_rgba(6,182,212,0.15)]">
+              <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+              <span>Editor Coloreado</span>
             </div>
 
             <!-- Selector de Altura del Editor (más espacio) -->
@@ -98,86 +82,26 @@
           </div>
         </div>
 
-        <!-- Contenedor del Editor / Coloreado con Altura Dinámica -->
-        <div class="relative rounded-2xl border border-slate-700/80 bg-[#080d1a] overflow-hidden shadow-inner focus-within:border-cyan-400 transition">
-          <!-- Modo Editor Editable con Coloreado en Tiempo Real y Números de Línea -->
-          <div v-if="editorMode === 'edit'" class="flex flex-col" :style="{ minHeight: `${editorHeight}px` }">
-            <div class="px-3 py-1.5 bg-[#090f20] border-b border-slate-800 text-[11px] font-mono text-slate-400 flex items-center justify-between">
-              <span class="flex items-center gap-1.5 text-cyan-300 font-bold">
-                <span>✏️</span> Editor Interactivo Coloreado en Vivo
+        <!-- Contenedor del Editor de Código con Coloreado en Tiempo Real (Vista Única) -->
+        <div class="relative rounded-2xl border border-slate-700/80 bg-[#080d1a] overflow-hidden shadow-inner focus-within:border-cyan-400 transition flex flex-col" :style="{ height: `${editorHeight}px` }">
+          <div class="px-3.5 py-2 bg-[#090f20] border-b border-slate-800 text-[11px] font-mono text-slate-400 flex items-center justify-between shrink-0">
+            <span class="flex items-center gap-2 text-cyan-300 font-bold">
+              <span>✏️</span> Editor Interactivo de Alto Nivel
+            </span>
+            <div class="flex items-center gap-3 text-[10px]">
+              <span class="text-emerald-400 font-semibold flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                Coloreado en vivo al escribir
               </span>
-              <div class="flex items-center gap-3 text-[10px]">
-                <span class="text-emerald-400 font-semibold flex items-center gap-1">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  Coloreado en vivo al escribir
-                </span>
-                <span class="text-slate-500 hidden sm:inline">Tab = Indentar</span>
-              </div>
-            </div>
-
-            <div class="flex-1 flex overflow-hidden relative" :style="{ height: `${editorHeight - 34}px` }">
-              <!-- Gutter de Números de Línea Sincronizado -->
-              <div
-                ref="editorGutterRef"
-                class="w-10 sm:w-12 shrink-0 pt-4 pb-4 select-none text-right pr-2.5 font-mono text-slate-600 bg-[#060a14] border-r border-slate-800/80 overflow-hidden"
-                aria-hidden="true"
-              >
-                <div
-                  v-for="(_, idx) in sourceCodeLines"
-                  :key="idx"
-                  class="code-gutter-line text-slate-500"
-                >
-                  {{ idx + 1 }}
-                </div>
-              </div>
-
-              <!-- Contenedor del Editor: Capa de Resaltado (fondo) + Textarea transparente (frente) -->
-              <div class="relative flex-1 h-full overflow-hidden bg-[#080d1a]">
-                <!-- Capa de Resaltado Sintáctico Cromático en Vivo -->
-                <pre
-                  ref="editorHighlightRef"
-                  aria-hidden="true"
-                  class="code-editor-surface absolute inset-0 m-0 p-4 overflow-hidden pointer-events-none select-none text-slate-100"
-                ><code class="code-editor-surface block" v-html="highlightedEditorCode"></code></pre>
-
-                <!-- Textarea Interactivo Transparente con Cursor y Selección Visibles -->
-                <textarea
-                  ref="editorTextareaRef"
-                  v-model="sourceCode"
-                  @keydown="onKeydown"
-                  @scroll="onEditorScroll"
-                  spellcheck="false"
-                  autocorrect="off"
-                  autocapitalize="off"
-                  class="code-editor-surface absolute inset-0 w-full h-full m-0 p-4 bg-transparent focus:outline-none resize-none overflow-auto text-transparent caret-cyan-400 placeholder:text-slate-500 selection:bg-cyan-500/30 selection:text-transparent"
-                  placeholder="// Escriba su clase, métodos, condicionales o recursión... (Presione Tab para indentar)"
-                ></textarea>
-              </div>
+              <span class="text-slate-500 hidden sm:inline">Tab = Indentar</span>
             </div>
           </div>
 
-          <!-- Modo Vista Previa con Resaltado Sintáctico Cromático -->
-          <div v-else class="flex flex-col bg-[#060a14]" :style="{ minHeight: `${editorHeight}px` }">
-            <div class="px-3 py-1.5 bg-[#090f20] border-b border-slate-800 text-[11px] font-mono text-slate-400 flex items-center justify-between">
-              <span class="flex items-center gap-1.5 text-purple-300 font-bold">
-                <span>🎨</span> Resaltado Sintáctico Cromático de Alto Nivel
-              </span>
-              <span class="text-[10px] text-slate-500">{{ sourceCodeLines.length }} líneas analizadas</span>
-            </div>
-            <div
-              class="overflow-y-auto p-4 font-mono text-xs sm:text-sm leading-relaxed space-y-0.5 select-text"
-              :style="{ height: `${editorHeight - 34}px` }"
-            >
-              <div
-                v-for="(line, lIdx) in sourceCodeLines"
-                :key="lIdx"
-                class="flex items-start gap-3 hover:bg-slate-900/60 px-1 py-0.2 rounded"
-              >
-                <span class="text-xs text-slate-500 w-8 select-none text-right shrink-0 font-mono">{{ lIdx + 1 }}.</span>
-                <span v-html="highlightGenericLine(line)" class="whitespace-pre font-mono flex-1"></span>
-              </div>
-            </div>
-          </div>
+          <!-- Montura de CodeMirror 6 -->
+          <div
+            ref="editorContainerRef"
+            class="flex-1 w-full overflow-hidden text-xs sm:text-sm cm-host-container"
+          ></div>
         </div>
 
         <!-- Alerta de estado de compilación reactiva -->
@@ -502,10 +426,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { EditorView, basicSetup } from 'codemirror';
+import { java } from '@codemirror/lang-java';
+import { keymap } from '@codemirror/view';
+import { indentWithTab } from '@codemirror/commands';
+import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
+import { tags as t } from '@lezer/highlight';
 import { compileToC3D } from '../../utils/c3dParser';
-import { highlightC3DLine, highlightRiscvLine, highlightGenericLine, highlightGeneric } from '../../utils/syntaxHighlight';
-import { handleTabIndent } from '../../utils/editorUtils';
+import { highlightC3DLine, highlightRiscvLine, highlightGenericLine } from '../../utils/syntaxHighlight';
 
 interface PresetItem {
   id: string;
@@ -1528,7 +1457,6 @@ main:
 
 const selectedPresetIdx = ref(0);
 const activeOutputTab = ref<'c3d' | 'cuartetas' | 'riscv' | 'memoria'>('c3d');
-const editorMode = ref<'edit' | 'preview'>('edit');
 const editorHeight = ref<number>(520);
 const editorExpanded = ref<boolean>(false);
 const c3dOptMode = ref<'unoptimized' | 'optimized' | 'diff'>('unoptimized');
@@ -1689,51 +1617,128 @@ const activeHeapLayout = computed(() => {
   return currentPreset.value.heapLayout;
 });
 
-const editorTextareaRef = ref<HTMLTextAreaElement | null>(null);
-const editorHighlightRef = ref<HTMLElement | null>(null);
-const editorGutterRef = ref<HTMLElement | null>(null);
+const editorContainerRef = ref<HTMLDivElement | null>(null);
+let editorView: EditorView | null = null;
 
-const highlightedEditorCode = computed(() => {
-  const code = sourceCode.value;
-  if (!code) return '';
-  const highlighted = highlightGeneric(code);
-  return code.endsWith('\n') ? highlighted + '\n ' : highlighted;
+// Highlight style con paleta Obsidian Dark:
+// - Comentarios en verde esmeralda distintivo con cursiva
+// - Identificadores, variables y texto en blanco/pizarra brillante (más claro que los comentarios)
+// - Palabras clave en púrpura
+// - Tipos en celeste cielo
+// - Cadenas en verde esmeralda cálido
+// - Números y booleanos en ámbar
+// - Operadores en rosa
+const obsidianHighlightStyle = HighlightStyle.define([
+  { tag: t.comment, color: '#34d399', fontStyle: 'italic' },
+  { tag: t.keyword, color: '#c084fc', fontWeight: 'bold' },
+  { tag: [t.typeName, t.typeOperator], color: '#38bdf8', fontWeight: 'bold' },
+  { tag: [t.definition(t.variableName), t.variableName], color: '#f8fafc' },
+  { tag: [t.function(t.variableName), t.definition(t.function(t.variableName))], color: '#7dd3fc', fontWeight: '600' },
+  { tag: t.propertyName, color: '#f1f5f9' },
+  { tag: t.string, color: '#4ade80' },
+  { tag: t.number, color: '#fbbf24', fontFamily: 'monospace' },
+  { tag: t.bool, color: '#fbbf24', fontWeight: 'bold' },
+  { tag: [t.operator, t.punctuation], color: '#f43f5e', fontWeight: 'bold' },
+  { tag: [t.paren, t.brace, t.bracket], color: '#a5b4fc', fontWeight: 'bold' },
+  { tag: t.null, color: '#fbbf24', fontWeight: 'bold' }
+]);
+
+const obsidianTheme = EditorView.theme({
+  '&': {
+    color: '#f8fafc',
+    backgroundColor: '#080d1a',
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+    fontSize: '13px',
+    height: '100%'
+  },
+  '.cm-content': {
+    caretColor: '#22d3ee',
+    padding: '16px 0',
+    lineHeight: '1.65'
+  },
+  '.cm-cursor, .cm-dropCursor': {
+    borderLeftColor: '#22d3ee',
+    borderLeftWidth: '2px'
+  },
+  '&.cm-focused .cm-cursor': {
+    borderLeftColor: '#22d3ee'
+  },
+  '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection': {
+    backgroundColor: 'rgba(6, 182, 212, 0.25) !important'
+  },
+  '.cm-gutters': {
+    backgroundColor: '#060a14',
+    color: '#64748b',
+    borderRight: '1px solid #1e293b',
+    paddingRight: '6px'
+  },
+  '.cm-activeLineGutter': {
+    backgroundColor: 'rgba(6, 182, 212, 0.12)',
+    color: '#22d3ee'
+  },
+  '.cm-activeLine': {
+    backgroundColor: 'rgba(6, 182, 212, 0.05)'
+  },
+  '.cm-scroller': {
+    overflow: 'auto',
+    fontFamily: 'inherit',
+    height: '100% !important'
+  }
+}, { dark: true });
+
+onMounted(() => {
+  if (!editorContainerRef.value) return;
+
+  const updateListener = EditorView.updateListener.of((update) => {
+    if (update.docChanged) {
+      sourceCode.value = update.state.doc.toString();
+    }
+  });
+
+  editorView = new EditorView({
+    doc: sourceCode.value,
+    extensions: [
+      basicSetup,
+      java(),
+      keymap.of([indentWithTab]),
+      syntaxHighlighting(obsidianHighlightStyle),
+      obsidianTheme,
+      updateListener
+    ],
+    parent: editorContainerRef.value
+  });
 });
 
-function onEditorScroll(e: Event) {
-  const target = e.target as HTMLTextAreaElement;
-  if (editorHighlightRef.value) {
-    editorHighlightRef.value.scrollTop = target.scrollTop;
-    editorHighlightRef.value.scrollLeft = target.scrollLeft;
+onBeforeUnmount(() => {
+  if (editorView) {
+    editorView.destroy();
+    editorView = null;
   }
-  if (editorGutterRef.value) {
-    editorGutterRef.value.scrollTop = target.scrollTop;
-  }
-}
+});
 
-function syncScrollToTop() {
-  if (editorTextareaRef.value) {
-    editorTextareaRef.value.scrollTop = 0;
-    editorTextareaRef.value.scrollLeft = 0;
-  }
-  if (editorHighlightRef.value) {
-    editorHighlightRef.value.scrollTop = 0;
-    editorHighlightRef.value.scrollLeft = 0;
-  }
-  if (editorGutterRef.value) {
-    editorGutterRef.value.scrollTop = 0;
+function setEditorContent(newCode: string) {
+  if (editorView) {
+    const currentDoc = editorView.state.doc.toString();
+    if (currentDoc !== newCode) {
+      editorView.dispatch({
+        changes: { from: 0, to: currentDoc.length, insert: newCode }
+      });
+      if (editorView.scrollDOM) {
+        editorView.scrollDOM.scrollTop = 0;
+      }
+    }
   }
 }
 
 function selectPreset(idx: number) {
   selectedPresetIdx.value = idx;
   sourceCode.value = presets[idx].code;
-  syncScrollToTop();
+  setEditorContent(presets[idx].code);
 }
 
 function resetToCurrentPreset() {
   sourceCode.value = currentPreset.value.code;
-  syncScrollToTop();
+  setEditorContent(currentPreset.value.code);
 }
 
 function compileCustom() {
@@ -1743,32 +1748,14 @@ function compileCustom() {
     compileSuccessToast.value = false;
   }, 2500);
 }
-
-function onKeydown(e: KeyboardEvent) {
-  handleTabIndent(e, () => sourceCode.value, (val) => {
-    sourceCode.value = val;
-  });
-}
 </script>
 
 <style scoped>
-.code-editor-surface {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
-  font-size: 13px !important;
-  line-height: 22px !important;
-  letter-spacing: 0px !important;
-  tab-size: 2 !important;
-  -moz-tab-size: 2 !important;
-  box-sizing: border-box !important;
-  white-space: pre !important;
-  word-wrap: normal !important;
-  overflow-wrap: normal !important;
+.cm-host-container :deep(.cm-editor) {
+  height: 100%;
 }
-
-.code-gutter-line {
-  height: 22px !important;
-  line-height: 22px !important;
-  font-size: 12px !important;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+.cm-host-container :deep(.cm-scroller) {
+  height: 100%;
+  overflow: auto;
 }
 </style>

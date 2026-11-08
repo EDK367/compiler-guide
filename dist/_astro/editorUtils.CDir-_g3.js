@@ -1,0 +1,2 @@
+function e(e,t,n){if(e.key!==`Tab`)return;e.preventDefault();let r=e.target,i=r.selectionStart,a=r.selectionEnd,o=t();if(e.shiftKey){let e=o.lastIndexOf(`
+`,i-1)+1;if(o.startsWith(`    `,e)){let t=o.substring(0,e)+o.substring(e+4);n(t),r.value=t,r.selectionStart=r.selectionEnd=Math.max(e,i-4)}else if(o.startsWith(`  `,e)){let t=o.substring(0,e)+o.substring(e+2);n(t),r.value=t,r.selectionStart=r.selectionEnd=Math.max(e,i-2)}}else{let e=o.substring(0,i)+`    `+o.substring(a);n(e),r.value=e,r.selectionStart=r.selectionEnd=i+4}}export{e as t};
