@@ -37,12 +37,36 @@
           <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
           Código Fuente de Entrada (Multilínea / Expresiones / Control)
         </label>
-        <span class="text-slate-400">
-          {{ inputCode.split('\n').length }} línea(s)
-        </span>
+        
+        <div class="flex items-center gap-2">
+          <!-- Alternador de vista Editor vs Coloreado -->
+          <div class="flex items-center gap-1 bg-slate-900 p-0.5 rounded-xl border border-slate-700 text-xs font-mono">
+            <button
+              @click="tacEditorMode = 'edit'"
+              :class="tacEditorMode === 'edit' ? 'bg-purple-950/80 text-purple-200 border border-purple-500/50 font-bold' : 'text-slate-400 hover:text-slate-200'"
+              class="px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1"
+            >
+              <span>✏️</span>
+              <span>Editor</span>
+            </button>
+            <button
+              @click="tacEditorMode = 'preview'"
+              :class="tacEditorMode === 'preview' ? 'bg-cyan-950/80 text-cyan-200 border border-cyan-500/50 font-bold' : 'text-slate-400 hover:text-slate-200'"
+              class="px-2.5 py-1 rounded-lg transition cursor-pointer flex items-center gap-1"
+            >
+              <span>🎨</span>
+              <span>Coloreado</span>
+            </button>
+          </div>
+
+          <span class="text-slate-400 hidden sm:inline">
+            {{ inputCode.split('\n').length }} línea(s)
+          </span>
+        </div>
       </div>
       <div class="relative rounded-2xl border border-slate-700/80 bg-[#080d1a] overflow-hidden shadow-inner focus-within:border-purple-400 transition">
         <textarea
+          v-if="tacEditorMode === 'edit'"
           v-model="inputCode"
           @input="generate"
           @keydown="onKeydown"
@@ -51,6 +75,20 @@
           class="w-full bg-transparent p-4 font-mono text-sm sm:text-base text-cyan-200 leading-relaxed focus:outline-none resize-y selection:bg-purple-500 selection:text-white"
           placeholder="Ej: x =  5 + 1 > y * 2; o múltiples líneas de código... (Presione Tab para indentar)"
         ></textarea>
+
+        <div
+          v-else
+          class="h-[140px] overflow-y-auto p-4 font-mono text-xs sm:text-sm leading-relaxed space-y-0.5 select-text bg-[#080d1a]"
+        >
+          <div
+            v-for="(line, lIdx) in inputCode.split('\n')"
+            :key="lIdx"
+            class="flex items-start gap-3 hover:bg-slate-900/60 px-1 py-0.2 rounded"
+          >
+            <span class="text-xs text-slate-500 w-6 select-none text-right shrink-0 font-mono">{{ lIdx + 1 }}.</span>
+            <span v-html="highlightGenericLine(line)" class="whitespace-pre font-mono flex-1"></span>
+          </div>
+        </div>
       </div>
       <!-- Alerta de Error si ocurre -->
       <div v-if="result.errors.length > 0" class="p-3 bg-red-950/40 border border-red-500/40 rounded-xl text-red-300 text-xs font-mono flex items-center gap-2">
@@ -196,11 +234,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { compileToC3D, type TranslationResult } from '../../utils/c3dParser';
-import { highlightC3DLine, highlightRiscvLine } from '../../utils/syntaxHighlight';
+import { highlightC3DLine, highlightRiscvLine, highlightGenericLine } from '../../utils/syntaxHighlight';
 import { handleTabIndent } from '../../utils/editorUtils';
 
 const inputCode = ref('x =  5 + 1 > y * 2;');
 const activeTab = ref<'tac' | 'cuadruplas' | 'tripletas' | 'riscv'>('tac');
+const tacEditorMode = ref<'edit' | 'preview'>('edit');
 
 const samples = [
   { label: '1. Relacional x = 5+1 > y*2;', code: 'x =  5 + 1 > y * 2;' },
@@ -208,7 +247,8 @@ const samples = [
   { label: '3. Condicional if-else', code: 'if (a > b) {\n  max = a;\n} else {\n  max = b;\n}' },
   { label: '4. Ciclo while & Arreglo', code: 'while (i < 10) {\n  arr[i] = i * 2;\n  i = i + 1;\n}' },
   { label: '5. POO / Heap con this', code: 'this.saldo = this.saldo + monto;\nreturn this.saldo;' },
-  { label: '6. Recursión Factorial', code: 'if (n <= 1) {\n  return 1;\n}\nreturn n * factorial(n - 1);' }
+  { label: '6. Recursión Factorial', code: 'if (n <= 1) {\n  return 1;\n}\nreturn n * factorial(n - 1);' },
+  { label: '7. Booleanos & Cadenas ""', code: 'esValido = true;\nmensaje = "Operacion completada con exito";\nif (esValido == true) {\n  resultado = 100;\n}' }
 ];
 
 const result = ref<TranslationResult>({

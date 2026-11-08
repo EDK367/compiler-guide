@@ -440,33 +440,82 @@ Calculadora_acumular:
     title: 'Doble Recursión: Fibonacci(3) y Pila',
     subtitle: 'Llamadas bifurcadas en árbol con preservación de s1 y ra',
     badge: 'Fibonacci(3)',
-    highLevelCode: `// Función Recursiva Doble
-int fibonacci(int n) {
-    if (n <= 0) return 0;
-    if (n == 1) return 1;
-    return fibonacci(n - 1) + fibonacci(n - 2);
+    highLevelCode: `// ========================================================
+// Función Recursiva Doble: Secuencia de Fibonacci
+// fib(n) = fib(n-1) + fib(n-2)
+// ========================================================
+class Algoritmos {
+    int fibonacci(int n) {
+        // CASO BASE 1: fib(0) = 0
+        if (n <= 0) return 0;
+        // CASO BASE 2: fib(1) = 1
+        if (n == 1) return 1;
+        // PASO RECURSIVO: se bifurca en dos llamadas y se acumula
+        return fibonacci(n - 1) + fibonacci(n - 2);
+    }
 }`,
-    c3dCode: `Fibonacci:
-    if n <= 0 goto L_ZERO
-    if n == 1 goto L_ONE
-    t0 = n - 1
-    param t0
-    t1 = call Fibonacci, 1
-    t2 = n - 2
-    param t2
-    t3 = call Fibonacci, 1
-    t4 = t1 + t3
-    return t4
-L_ZERO: return 0
-L_ONE:  return 1`,
-    assemblyCode: `fibonacci:
-    addi sp, sp, -32
-    sw ra, 28(sp)
-    sw s0, 24(sp)
-    sw s1, 20(sp)
-    addi s0, sp, 32
-    sw a0, -8(s0)
-    # Cuerpo y desenrollado...`,
+    c3dCode: `// ========================================================
+// C3D: Fibonacci con saltos y parámetros canónicos
+// ========================================================
+Fibonacci:
+    if n <= 0 goto L_ZERO       // Salto a caso base 0
+    if n == 1 goto L_ONE        // Salto a caso base 1
+    t0 = n - 1                  // Argumento rama izquierda
+    param t0                    // Pasa t0 a registro a0
+    t1 = call Fibonacci, 1      // t1 = fib(n - 1)
+    t2 = n - 2                  // Argumento rama derecha
+    param t2                    // Pasa t2 a registro a0
+    t3 = call Fibonacci, 1      // t3 = fib(n - 2)
+    t4 = t1 + t3                // Suma ambas ramas del árbol
+    return t4                   // Retorna suma acumulada
+L_ZERO: 
+    return 0                    // Retorno caso base 0
+L_ONE:  
+    return 1                    // Retorno caso base 1`,
+    assemblyCode: `# ========================================================
+# RISC-V RV32I: Fibonacci con Frame Pointer y preservación de s1
+# ========================================================
+fibonacci:
+    addi sp, sp, -32            # 1. Prólogo: reserva marco de 32 bytes
+    sw   ra, 28(sp)             # Salva dirección de retorno
+    sw   s0, 24(sp)             # Salva Frame Pointer llamador
+    sw   s1, 20(sp)             # Salva callee-saved s1 (para rama izquierda)
+    addi s0, sp, 32             # Fija nuevo Frame Pointer en la base
+    sw   a0, -8(s0)             # Guarda argumento n en la pila local
+
+    # 2. Casos base
+    lw   t0, -8(s0)             # Carga n desde la pila local
+    blez t0, .L_ZERO            # Si n <= 0 salta a retornar 0
+    li   t1, 1
+    beq  t0, t1, .L_ONE         # Si n == 1 salta a retornar 1
+
+    # 3. Rama izquierda: fib(n - 1)
+    addi a0, t0, -1             # a0 = n - 1
+    jal  ra, fibonacci          # Llamada recursiva (ra = PC + 4)
+    mv   s1, a0                 # s1 = fib(n - 1) (protege retorno en callee-saved)
+
+    # 4. Rama derecha: fib(n - 2)
+    lw   t0, -8(s0)             # Recupera n original del marco actual
+    addi a0, t0, -2             # a0 = n - 2
+    jal  ra, fibonacci          # Segunda llamada recursiva: a0 = fib(n - 2)
+
+    # 5. Suma de ramas y retorno
+    add  a0, s1, a0             # a0 = fib(n-1) + fib(n-2)
+    j    .L_RET
+
+.L_ZERO:
+    li   a0, 0                  # Retorno caso base 0
+    j    .L_RET
+.L_ONE:
+    li   a0, 1                  # Retorno caso base 1
+
+.L_RET:
+    # 6. Epílogo canónico
+    lw   s1, 20(sp)             # Restaura s1
+    lw   s0, 24(sp)             # Restaura Frame Pointer
+    lw   ra, 28(sp)             # Restaura ra
+    addi sp, sp, 32             # Libera marco
+    ret                         # Retorna al llamador`,
     frameDescription: 'Marco de 32B con ra, s0, registro preservado s1 y parámetro n',
     steps: [
       {
@@ -536,6 +585,216 @@ L_ONE:  return 1`,
         registers: { pc: '0x0040', zero: 0, ra: '0x0040', sp: '0x0140', fp: '0x0160', a0: 2, a1: 0, t0: 1, t1: 1, t2: 2, t3: 0 },
         stack: [
           { addr: '0x0160', offset: '0(fp_caller)', role: 'Marco caller', value: 'caller_ctx' }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'programa-completo-main-arreglos',
+    title: 'Programa Completo: Main, Funciones y Arreglos en Heap',
+    subtitle: 'Arreglos dinámicos en Heap, loops while, filtros, booleanos y strings',
+    badge: 'Main & Arreglos',
+    highLevelCode: `// ========================================================
+// Programa Integral Completo: Main, Funciones y Arreglos
+// ========================================================
+class SistemaEstadistico {
+    int[] datos;
+    int cantidad;
+    boolean procesado;
+
+    int calcularSumaFiltrada(int[] arr, int n, int umbral) {
+        int suma = 0;
+        int i = 0;
+        boolean hayValidos = false;
+
+        while (i < n) {
+            int elemento = arr[i];
+            if (elemento > umbral) {
+                suma = suma + elemento;
+                hayValidos = true;
+            }
+            i = i + 1;
+        }
+
+        if (hayValidos == true) {
+            return suma;
+        } else {
+            return -1;
+        }
+    }
+
+    void main() {
+        this.cantidad = 5;
+        this.procesado = false;
+        int[] lista = new int[5]; // En Heap 0x1020
+        lista[0] = 10; lista[1] = 25; lista[2] = 5; lista[3] = 40; lista[4] = 15;
+        int total = calcularSumaFiltrada(lista, this.cantidad, 12);
+        this.procesado = true;
+        System.out.println("Procesamiento completado con exito");
+    }
+}`,
+    c3dCode: `// ========================================================
+// C3D: calcularSumaFiltrada y main
+// ========================================================
+calcularSumaFiltrada:
+    suma = 0
+    i = 0
+    hayValidos = false
+L_WHILE_TEST:
+    if i >= n goto L_WHILE_END
+    t0 = i * 4
+    t1 = arr + t0
+    elemento = Heap[t1]
+    if elemento > umbral goto L_FILTRO_TRUE
+    goto L_INC
+L_FILTRO_TRUE:
+    suma = suma + elemento
+    hayValidos = true
+L_INC:
+    i = i + 1
+    goto L_WHILE_TEST
+L_WHILE_END:
+    if hayValidos == true goto L_RET_SUMA
+    return -1
+L_RET_SUMA:
+    return suma`,
+    assemblyCode: `.data
+str_exito: .string "Procesamiento completado con exito"
+
+.text
+.globl main
+.globl calcularSumaFiltrada
+
+# 1. Prólogo y Reserva de Marco
+calcularSumaFiltrada:
+    addi sp, sp, -32
+    sw ra, 28(sp)
+    sw s0, 24(sp)
+    addi s0, sp, 32
+    sw a0, -8(s0)       # arr (Heap 0x1020)
+    sw a1, -12(s0)      # n = 5
+    sw a2, -16(s0)      # umbral = 12
+
+    # 2. Inicialización
+    li t0, 0            # suma = 0
+    sw t0, -20(s0)
+    li t1, 0            # i = 0
+    sw t1, -24(s0)
+
+.L_LOOP:
+    lw t1, -24(s0)      # t1 = i
+    lw a1, -12(s0)      # a1 = n (5)
+    bge t1, a1, .L_END  # if i >= n sale
+
+    # Acceso Heap: arr + i*4
+    lw a0, -8(s0)
+    slli t3, t1, 2      # offset bytes
+    add t4, a0, t3
+    lw t5, 0(t4)        # t5 = arr[i]
+
+    lw a2, -16(s0)      # umbral (12)
+    ble t5, a2, .L_NEXT
+    lw t0, -20(s0)
+    add t0, t0, t5      # suma += arr[i]
+    sw t0, -20(s0)
+
+.L_NEXT:
+    addi t1, t1, 1      # i++
+    sw t1, -24(s0)
+    j .L_LOOP
+
+.L_END:
+    lw a0, -20(s0)      # Retorna suma acumulada
+    lw s0, 24(sp)
+    lw ra, 28(sp)
+    addi sp, sp, 32
+    ret`,
+    frameDescription: 'Marco de 32B con ra, s0, puntero arr en -8(fp), n en -12(fp), umbral en -16(fp) y acumulador suma en -20(fp)',
+    steps: [
+      {
+        pc: '0x0000',
+        instruction: 'addi sp, sp, -32 ; sw ra, 28(sp) ; sw s0, 24(sp)',
+        comment: 'Prólogo de calcularSumaFiltrada',
+        explanation: 'Se reserva el marco de pila de 32 bytes y se ancla el Frame Pointer s0 a sp + 32.',
+        registers: { pc: '0x0000', zero: 0, ra: '0x0080', sp: '0x0118', fp: '0x0138', a0: 4128, a1: 5, t0: 0, t1: 0, t2: 0, t3: 0 },
+        stack: [
+          { addr: '0x0138', offset: '0(fp)', role: 's0 anterior', value: '0x0158' },
+          { addr: '0x0134', offset: '-4(fp)', role: 'ra retorno main', value: '0x0080' }
+        ],
+        heap: [
+          { addr: '0x1020', field: 'lista[0]', type: 'int32', value: '10' },
+          { addr: '0x1024', field: 'lista[1]', type: 'int32', value: '25' },
+          { addr: '0x1028', field: 'lista[2]', type: 'int32', value: '5' },
+          { addr: '0x102c', field: 'lista[3]', type: 'int32', value: '40' },
+          { addr: '0x1030', field: 'lista[4]', type: 'int32', value: '15' }
+        ]
+      },
+      {
+        pc: '0x000C',
+        instruction: 'sw a0, -8(s0) ; sw a1, -12(s0) ; sw a2, -16(s0)',
+        comment: 'Guardar parámetros: arr (0x1020), n (5), umbral (12)',
+        explanation: 'Los parámetros recibidos en registros ABI se guardan en sus ranuras designadas respecto a fp.',
+        registers: { pc: '0x000C', zero: 0, ra: '0x0080', sp: '0x0118', fp: '0x0138', a0: 4128, a1: 5, t0: 0, t1: 0, t2: 0, t3: 0 },
+        stack: [
+          { addr: '0x0138', offset: '0(fp)', role: 's0 anterior', value: '0x0158' },
+          { addr: '0x0134', offset: '-4(fp)', role: 'ra retorno', value: '0x0080' },
+          { addr: '0x0130', offset: '-8(fp)', role: 'arr base (Heap)', value: '0x1020', highlight: true },
+          { addr: '0x012C', offset: '-12(fp)', role: 'tamaño n', value: '5', highlight: true },
+          { addr: '0x0128', offset: '-16(fp)', role: 'umbral corte', value: '12', highlight: true }
+        ],
+        heap: [
+          { addr: '0x1020', field: 'lista[0]', type: 'int32', value: '10' },
+          { addr: '0x1024', field: 'lista[1]', type: 'int32', value: '25' },
+          { addr: '0x1028', field: 'lista[2]', type: 'int32', value: '5' },
+          { addr: '0x102c', field: 'lista[3]', type: 'int32', value: '40' },
+          { addr: '0x1030', field: 'lista[4]', type: 'int32', value: '15' }
+        ]
+      },
+      {
+        pc: '0x0018',
+        instruction: 'slli t3, t1, 2 ; add t4, a0, t3 ; lw t5, 0(t4)',
+        comment: 'Iteración i=1: cargar lista[1] (25) desde Heap',
+        explanation: 'Offset = 1 * 4 = 4 bytes. Dirección = 0x1020 + 4 = 0x1024. Se carga el valor 25 desde el Heap.',
+        registers: { pc: '0x0024', zero: 0, ra: '0x0080', sp: '0x0118', fp: '0x0138', a0: 4128, a1: 5, t0: 0, t1: 1, t2: 0, t3: 4 },
+        stack: [
+          { addr: '0x0130', offset: '-8(fp)', role: 'arr base (Heap)', value: '0x1020' },
+          { addr: '0x0124', offset: '-20(fp)', role: 'suma', value: '0' },
+          { addr: '0x0120', offset: '-24(fp)', role: 'índice i', value: '1', highlight: true }
+        ],
+        heap: [
+          { addr: '0x1024', field: 'lista[1]', type: 'int32', value: '25' }
+        ]
+      },
+      {
+        pc: '0x002C',
+        instruction: 'add t0, t0, t5 ; sw t0, -20(s0)',
+        comment: 'Filtro: 25 > 12 es TRUE -> suma += 25 (25)',
+        explanation: 'El elemento supera el umbral de 12. Se acumula 25 a la suma local y se actualiza en la pila.',
+        registers: { pc: '0x0034', zero: 0, ra: '0x0080', sp: '0x0118', fp: '0x0138', a0: 4128, a1: 5, t0: 25, t1: 1, t2: 0, t3: 4 },
+        stack: [
+          { addr: '0x0124', offset: '-20(fp)', role: 'suma acumulada', value: '25', highlight: true },
+          { addr: '0x0120', offset: '-24(fp)', role: 'índice i', value: '1' }
+        ]
+      },
+      {
+        pc: '0x0040',
+        instruction: 'lw t5, 12(a0) ; add t0, t0, t5 ; lw t5, 16(a0) ; add t0, t0, t5',
+        comment: 'Procesar lista[3]=40 y lista[4]=15 -> suma = 25+40+15 = 80',
+        explanation: 'Los elementos 40 y 15 superan el umbral 12. La suma total de los elementos filtrados resulta en 80.',
+        registers: { pc: '0x004C', zero: 0, ra: '0x0080', sp: '0x0118', fp: '0x0138', a0: 4128, a1: 5, t0: 80, t1: 5, t2: 0, t3: 16 },
+        stack: [
+          { addr: '0x0124', offset: '-20(fp)', role: 'suma final', value: '80', highlight: true },
+          { addr: '0x0120', offset: '-24(fp)', role: 'índice i (fin)', value: '5' }
+        ]
+      },
+      {
+        pc: '0x0054',
+        instruction: 'lw a0, -20(s0) ; lw s0, 24(sp) ; lw ra, 28(sp) ; addi sp, sp, 32 ; ret',
+        comment: 'Epílogo: retornar a0 = 80 al llamador main()',
+        explanation: 'Se coloca el resultado final 80 en a0, se destruye el marco de pila y se regresa a main con ret.',
+        registers: { pc: '0x005C', zero: 0, ra: '0x0080', sp: '0x0138', fp: '0x0158', a0: 80, a1: 5, t0: 80, t1: 5, t2: 0, t3: 16 },
+        stack: [
+          { addr: '0x0158', offset: '0(fp_main)', role: 'Marco main()', value: 'main_ctx' }
         ]
       }
     ]

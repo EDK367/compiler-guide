@@ -1,19 +1,21 @@
 /**
  * Utilidades de resaltado sintáctico de alto rendimiento para
- * Ensamblador RISC-V RV32I, Código de Tres Direcciones (C3D) y Código Fuente.
+ * Ensamblador RISC-V RV32I, Código de Tres Direcciones (C3D) y Lenguajes de Alto Nivel (Java / C / C++).
  * 
  * Basado en tokenización léxica directa para garantizar renderizado seguro,
  * rápido y con colores vibrantes acordes a la paleta Obsidian Dark Mode:
- * Cyan (#06b6d4), Morado (#a855f7), Azulito (#38bdf8), Ámbar y Rosa.
+ * Cyan (#06b6d4), Morado (#a855f7), Azulito (#38bdf8), Esmeralda/Verde para cadenas,
+ * Ámbar (#f59e0b) para booleanos y números, y Rosa (#f43f5e) para operadores.
  */
 
 const RISCV_OPCODES = new Set([
   'add', 'addi', 'sub', 'mul', 'div', 'rem', 'and', 'andi', 'or', 'ori',
-  'xor', 'xori', 'sll', 'srl', 'sra', 'slt', 'slti', 'sltu', 'seqz', 'snez',
-  'sgtz', 'sltz', 'beqz', 'bnez', 'beq', 'bne', 'blt', 'bge', 'bltu', 'bgeu',
-  'ble', 'blez', 'bgt', 'bgtz', 'j', 'jr', 'jal', 'jalr', 'ret', 'call',
-  'tail', 'la', 'li', 'mv', 'not', 'neg', 'nop', 'lw', 'lh', 'lb', 'lbu',
-  'lhu', 'sw', 'sh', 'sb', 'fence', 'ecall', 'ebreak'
+  'xor', 'xori', 'sll', 'slli', 'srl', 'srli', 'sra', 'srai', 'slt', 'slti',
+  'sltu', 'sltiu', 'seqz', 'snez', 'sgtz', 'sltz', 'beqz', 'bnez', 'beq',
+  'bne', 'blt', 'bge', 'bltu', 'bgeu', 'ble', 'blez', 'bgt', 'bgtz',
+  'j', 'jr', 'jal', 'jalr', 'ret', 'call', 'tail', 'la', 'li', 'mv',
+  'not', 'neg', 'nop', 'lw', 'lh', 'lb', 'lbu', 'lhu', 'sw', 'sh', 'sb',
+  'fence', 'ecall', 'ebreak'
 ]);
 
 const RISCV_REGISTERS = new Set([
@@ -30,10 +32,17 @@ const C3D_KEYWORDS = new Set([
   'if', 'goto', 'call', 'param', 'return'
 ]);
 
-const GENERIC_KEYWORDS = new Set([
-  'int', 'void', 'boolean', 'class', 'public', 'private', 'protected',
-  'static', 'return', 'if', 'else', 'while', 'for', 'new', 'this',
-  'true', 'false', 'null', 'float', 'double', 'char', 'struct', 'typedef', 'const'
+const HIGH_LEVEL_KEYWORDS = new Set([
+  'class', 'public', 'private', 'protected', 'static', 'void', 'return',
+  'if', 'else', 'while', 'for', 'do', 'new', 'this', 'extends', 'implements',
+  'interface', 'super', 'try', 'catch', 'finally', 'throw', 'throws',
+  'switch', 'case', 'break', 'default', 'continue', 'import', 'package',
+  'const', 'typedef', 'struct', 'enum'
+]);
+
+const HIGH_LEVEL_TYPES = new Set([
+  'int', 'boolean', 'bool', 'char', 'byte', 'short', 'long', 'float', 'double',
+  'String', 'Integer', 'Boolean', 'Double', 'List', 'Map', 'Set', 'Vector', 'Object'
 ]);
 
 function escapeHtml(s: string): string {
@@ -60,15 +69,19 @@ export function highlightRiscvLine(line: string): string {
       break;
     }
 
-    // Cadenas literales "..."
-    if (ch === '"') {
-      let str = ch;
+    // Cadenas literales "..." con soporte de comillas dobles y escape
+    if (ch === '"' || ch === "'") {
+      const quote = ch;
+      let str = quote;
       pos++;
-      while (pos < line.length && line[pos] !== '"') {
+      while (pos < line.length && line[pos] !== quote) {
+        if (line[pos] === '\\' && pos + 1 < line.length) {
+          str += line[pos++];
+        }
         str += line[pos++];
       }
       if (pos < line.length) str += line[pos++];
-      out += `<span class="text-emerald-300">${escapeHtml(str)}</span>`;
+      out += `<span class="text-emerald-300 font-medium">${escapeHtml(str)}</span>`;
       continue;
     }
 
@@ -88,7 +101,7 @@ export function highlightRiscvLine(line: string): string {
       if (pos < line.length && line[pos] === ':') {
         word += line[pos++];
         out += `<span class="text-amber-400 font-bold">${escapeHtml(word)}</span>`;
-      } else if (word === '.globl' || word === '.text' || word === '.data' || word === '.word') {
+      } else if (['.globl', '.text', '.data', '.word', '.string', '.asciz', '.space', '.align'].includes(word)) {
         out += `<span class="text-purple-400 font-bold">${escapeHtml(word)}</span>`;
       } else {
         out += `<span class="text-amber-300 font-semibold">${escapeHtml(word)}</span>`;
@@ -110,7 +123,9 @@ export function highlightRiscvLine(line: string): string {
       }
 
       const lower = word.toLowerCase();
-      if (RISCV_OPCODES.has(lower)) {
+      if (lower === 'true' || lower === 'false') {
+        out += `<span class="text-amber-400 font-bold">${escapeHtml(word)}</span>`;
+      } else if (RISCV_OPCODES.has(lower)) {
         out += `<span class="text-pink-400 font-bold">${escapeHtml(word)}</span>`;
       } else if (RISCV_REGISTERS.has(lower)) {
         out += `<span class="text-cyan-300 font-semibold">${escapeHtml(word)}</span>`;
@@ -120,7 +135,7 @@ export function highlightRiscvLine(line: string): string {
       continue;
     }
 
-    // Números enteros, constantes inmediatas y offsets negativos
+    // Números enteros, constantes inmediatas, hexadecimales y offsets negativos
     if (/[0-9]/.test(ch) || (ch === '-' && /[0-9]/.test(line[pos + 1] || ''))) {
       let num = line[pos++];
       while (pos < line.length && /[0-9a-fA-FxX]/.test(line[pos])) {
@@ -172,22 +187,26 @@ export function highlightC3DLine(line: string): string {
   while (pos < line.length) {
     const ch = line[pos];
 
-    // Comentario // o /* o #
+    // Comentario // o #
     if ((ch === '/' && line[pos + 1] === '/') || ch === '#') {
       const comment = line.slice(pos);
       out += `<span class="text-slate-400 italic">${escapeHtml(comment)}</span>`;
       break;
     }
 
-    // Cadenas "..."
-    if (ch === '"') {
-      let str = ch;
+    // Cadenas "..." con delimitador y escape
+    if (ch === '"' || ch === "'") {
+      const quote = ch;
+      let str = quote;
       pos++;
-      while (pos < line.length && line[pos] !== '"') {
+      while (pos < line.length && line[pos] !== quote) {
+        if (line[pos] === '\\' && pos + 1 < line.length) {
+          str += line[pos++];
+        }
         str += line[pos++];
       }
       if (pos < line.length) str += line[pos++];
-      out += `<span class="text-emerald-300">${escapeHtml(str)}</span>`;
+      out += `<span class="text-emerald-300 font-medium">${escapeHtml(str)}</span>`;
       continue;
     }
 
@@ -211,7 +230,10 @@ export function highlightC3DLine(line: string): string {
         continue;
       }
 
-      if (C3D_KEYWORDS.has(word)) {
+      // Booleanos explícitos (true / false)
+      if (word === 'true' || word === 'false') {
+        out += `<span class="text-amber-400 font-bold">${escapeHtml(word)}</span>`;
+      } else if (C3D_KEYWORDS.has(word)) {
         out += `<span class="text-purple-400 font-bold">${escapeHtml(word)}</span>`;
       } else if (word === 'Heap' || word === 'Stack') {
         out += `<span class="text-emerald-400 font-bold">${escapeHtml(word)}</span>`;
@@ -227,10 +249,10 @@ export function highlightC3DLine(line: string): string {
       continue;
     }
 
-    // Números enteros
+    // Números enteros y decimales
     if (/[0-9]/.test(ch)) {
       let num = '';
-      while (pos < line.length && /[0-9]/.test(line[pos])) {
+      while (pos < line.length && /[0-9a-fA-FxX.]/.test(line[pos])) {
         num += line[pos++];
       }
       out += `<span class="text-amber-300 font-mono">${escapeHtml(num)}</span>`;
@@ -283,56 +305,127 @@ export function highlightC3D(code: string): string {
 }
 
 /**
+ * Resalta una línea individual de código fuente de alto nivel (Java / C / C++).
+ */
+export function highlightGenericLine(line: string): string {
+  let pos = 0;
+  let out = '';
+
+  while (pos < line.length) {
+    const ch = line[pos];
+
+    // Comentario //
+    if (ch === '/' && line[pos + 1] === '/') {
+      out += `<span class="text-slate-400 italic">${escapeHtml(line.slice(pos))}</span>`;
+      break;
+    }
+
+    // Cadenas literales "..." con comillas dobles y escapes
+    if (ch === '"' || ch === "'") {
+      const quote = ch;
+      let str = quote;
+      pos++;
+      while (pos < line.length && line[pos] !== quote) {
+        if (line[pos] === '\\' && pos + 1 < line.length) {
+          str += line[pos++];
+        }
+        str += line[pos++];
+      }
+      if (pos < line.length) str += line[pos++];
+      out += `<span class="text-emerald-300 font-medium">${escapeHtml(str)}</span>`;
+      continue;
+    }
+
+    // Espacios en blanco
+    if (/\s/.test(ch)) {
+      out += ch;
+      pos++;
+      continue;
+    }
+
+    // Identificadores, palabras clave y tipos
+    if (/[a-zA-Z_]/.test(ch)) {
+      let word = '';
+      while (pos < line.length && /[a-zA-Z0-9_]/.test(line[pos])) {
+        word += line[pos++];
+      }
+
+      // 1. Booleanos literales (true / false) y null
+      if (word === 'true' || word === 'false') {
+        out += `<span class="text-amber-400 font-bold">${escapeHtml(word)}</span>`;
+      } else if (word === 'null') {
+        out += `<span class="text-amber-300 font-bold">${escapeHtml(word)}</span>`;
+      } else if (word === 'this') {
+        out += `<span class="text-emerald-300 font-bold">${escapeHtml(word)}</span>`;
+      } else if (HIGH_LEVEL_TYPES.has(word)) {
+        out += `<span class="text-indigo-300 font-bold">${escapeHtml(word)}</span>`;
+      } else if (HIGH_LEVEL_KEYWORDS.has(word)) {
+        out += `<span class="text-purple-400 font-bold">${escapeHtml(word)}</span>`;
+      } else if (['System', 'out', 'println', 'print', 'printf', 'main'].includes(word)) {
+        out += `<span class="text-cyan-300 font-bold">${escapeHtml(word)}</span>`;
+      } else if (pos < line.length && line[pos] === '(') {
+        // Invocación o declaración de función/método
+        out += `<span class="text-cyan-200 font-semibold">${escapeHtml(word)}</span>`;
+      } else {
+        out += `<span class="text-sky-200">${escapeHtml(word)}</span>`;
+      }
+      continue;
+    }
+
+    // Números enteros, hexadecimales o decimales
+    if (/[0-9]/.test(ch)) {
+      let num = '';
+      while (pos < line.length && /[0-9a-fA-FxX.]/.test(line[pos])) {
+        num += line[pos++];
+      }
+      out += `<span class="text-amber-300 font-mono">${escapeHtml(num)}</span>`;
+      continue;
+    }
+
+    // Operadores compuestos
+    const twoChars = line.slice(pos, pos + 2);
+    if (['==', '!=', '>=', '<=', '&&', '||', '++', '--', '+=', '-=', '*=', '/='].includes(twoChars)) {
+      out += `<span class="text-pink-400 font-bold">${escapeHtml(twoChars)}</span>`;
+      pos += 2;
+      continue;
+    }
+
+    // Operadores simples
+    if (['=', '+', '-', '*', '/', '%', '>', '<', '!', '&', '|', '^', '~'].includes(ch)) {
+      out += `<span class="text-pink-400 font-bold">${escapeHtml(ch)}</span>`;
+      pos++;
+      continue;
+    }
+
+    // Delimitadores y llaves
+    if (['{', '}', '(', ')', '[', ']'].includes(ch)) {
+      out += `<span class="text-indigo-300 font-bold">${escapeHtml(ch)}</span>`;
+      pos++;
+      continue;
+    }
+
+    if (ch === ';' || ch === ',' || ch === '.') {
+      out += `<span class="text-slate-500">${escapeHtml(ch)}</span>`;
+      pos++;
+      continue;
+    }
+
+    out += escapeHtml(ch);
+    pos++;
+  }
+
+  return out;
+}
+
+/**
  * Resalta código genérico de lenguajes de alto nivel (Java / C / C++).
  */
 export function highlightGeneric(code: string): string {
   if (!code) return '';
-  return code.split('\n').map(line => {
-    let pos = 0;
-    let out = '';
-    while (pos < line.length) {
-      const ch = line[pos];
-      if (ch === '/' && line[pos + 1] === '/') {
-        out += `<span class="text-slate-400 italic">${escapeHtml(line.slice(pos))}</span>`;
-        break;
-      }
-      if (ch === '"') {
-        let str = ch;
-        pos++;
-        while (pos < line.length && line[pos] !== '"') str += line[pos++];
-        if (pos < line.length) str += line[pos++];
-        out += `<span class="text-emerald-300">${escapeHtml(str)}</span>`;
-        continue;
-      }
-      if (/\s/.test(ch)) { out += ch; pos++; continue; }
-      if (/[a-zA-Z_]/.test(ch)) {
-        let word = '';
-        while (pos < line.length && /[a-zA-Z0-9_]/.test(line[pos])) word += line[pos++];
-        if (GENERIC_KEYWORDS.has(word)) {
-          out += `<span class="text-purple-400 font-bold">${escapeHtml(word)}</span>`;
-        } else if (word === 'printf' || word === 'println' || word === 'print' || word === 'System') {
-          out += `<span class="text-cyan-300 font-bold">${escapeHtml(word)}</span>`;
-        } else {
-          out += `<span class="text-sky-200">${escapeHtml(word)}</span>`;
-        }
-        continue;
-      }
-      if (/[0-9]/.test(ch)) {
-        let num = '';
-        while (pos < line.length && /[0-9a-fA-FxX]/.test(line[pos])) num += line[pos++];
-        out += `<span class="text-amber-300 font-mono">${escapeHtml(num)}</span>`;
-        continue;
-      }
-      if (['=', '+', '-', '*', '/', '%', '>', '<', '!', '&', '|'].includes(ch)) {
-        out += `<span class="text-pink-400 font-bold">${escapeHtml(ch)}</span>`;
-        pos++;
-        continue;
-      }
-      out += escapeHtml(ch);
-      pos++;
-    }
-    return out;
-  }).join('\n');
+  return code
+    .split('\n')
+    .map(line => highlightGenericLine(line))
+    .join('\n');
 }
 
 /**

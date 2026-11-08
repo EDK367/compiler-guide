@@ -1,5 +1,5 @@
 export interface Token {
-  type: 'KEYWORD' | 'IDENTIFIER' | 'NUMBER' | 'OPERATOR' | 'RELOP' | 'LOGOP' | 'ASSIGN' | 'DELIMITER';
+  type: 'KEYWORD' | 'IDENTIFIER' | 'NUMBER' | 'STRING' | 'OPERATOR' | 'RELOP' | 'LOGOP' | 'ASSIGN' | 'DELIMITER';
   value: string;
   line: number;
   col: number;
@@ -109,6 +109,38 @@ export function tokenize(source: string): { tokens: Token[]; errors: string[] } 
         col++;
       }
       tokens.push({ type: 'NUMBER', value: val, line, col: startCol });
+      continue;
+    }
+
+    // Cadenas de texto literales "..." o '...'
+    if (ch === '"' || ch === "'") {
+      const quote = ch;
+      const startCol = col;
+      let val = '';
+      pos++; // saltar comilla de apertura
+      col++;
+      while (pos < source.length && source[pos] !== quote) {
+        if (source[pos] === '\\' && pos + 1 < source.length) {
+          pos++;
+          col++;
+          const esc = source[pos];
+          if (esc === 'n') val += '\\n';
+          else if (esc === 't') val += '\\t';
+          else if (esc === '"') val += '\\"';
+          else if (esc === "'") val += "\\'";
+          else if (esc === '\\') val += '\\\\';
+          else val += esc;
+        } else {
+          val += source[pos];
+        }
+        pos++;
+        col++;
+      }
+      if (pos < source.length) {
+        pos++; // saltar comilla de cierre
+        col++;
+      }
+      tokens.push({ type: 'STRING', value: `"${val}"`, line, col: startCol });
       continue;
     }
 
@@ -484,6 +516,50 @@ export function compileToC3D(source: string): TranslationResult {
       };
     }
 
+    // 4. Literales booleanos (true / false)
+    if (t.value === 'true' || t.value === 'false') {
+      const boolTok = consume();
+      return {
+        ast: { id: `node_${Math.random().toString(36).substring(2, 7)}`, type: 'BooleanLiteral', value: boolTok.value },
+        place: boolTok.value
+      };
+    }
+
+    // 5. Literales de cadena ("...")
+    if (t.type === 'STRING') {
+      const strTok = consume();
+      return {
+        ast: { id: `node_${Math.random().toString(36).substring(2, 7)}`, type: 'StringLiteral', value: strTok.value },
+        place: strTok.value
+      };
+    }
+
+    // 6. Operador de instanciación new: new int[size] o new Clase()
+    if (t.value === 'new') {
+      consume('new');
+      const typeTok = consume();
+      if (peek() && peek()!.value === '[') {
+        consume('[');
+        const sizeExpr = parseExpression();
+        consume(']');
+        const dest = newTemp();
+        emitQuad('alloc', sizeExpr.place, typeTok.value, dest, `${dest} = alloc(${sizeExpr.place} * 4)`);
+        return {
+          ast: { id: `node_${Math.random().toString(36).substring(2, 7)}`, type: 'NewArray', value: `new ${typeTok.value}[]`, children: [sizeExpr.ast] },
+          place: dest
+        };
+      } else if (peek() && peek()!.value === '(') {
+        consume('(');
+        consume(')');
+        const dest = newTemp();
+        emitQuad('alloc', '32', typeTok.value, dest, `${dest} = alloc(${typeTok.value})`);
+        return {
+          ast: { id: `node_${Math.random().toString(36).substring(2, 7)}`, type: 'NewInstance', value: `new ${typeTok.value}()` },
+          place: dest
+        };
+      }
+    }
+
     throw new Error(`Token inesperado en expresión: '${t.value}'`);
   }
 
@@ -558,9 +634,15 @@ export function compileToC3D(source: string): TranslationResult {
       return;
     }
 
-    // 4. Declaración de método o variable tipada: int x = expr; o int metodo(int a) { ... }
-    if (tok.value === 'int' || tok.value === 'boolean' || tok.value === 'void') {
+    // 4. Declaración de método o variable tipada: int x = expr; o int[] arr = expr; o int metodo(int a) { ... }
+    if (tok.value === 'int' || tok.value === 'boolean' || tok.value === 'void' || tok.value === 'String') {
       consume(); // tipo
+      // Soporte para arreglos tipados tipo Java: int[] arr
+      while (peek() && peek()!.value === '[') {
+        consume('[');
+        if (peek() && peek()!.value !== ']') parseExpression();
+        consume(']');
+      }
       const idTok = consume();
 
       // ¿Es declaración de método? int nombre(...) { ... }
@@ -745,6 +827,32 @@ export function compileToC3D(source: string): TranslationResult {
       return;
     }
 
+    // 10.5 Salida por consola: System.out.println(...) o print(...)
+    if (tok.value === 'System' || tok.value === 'print' || tok.value === 'println') {
+      while (peek() && peek()!.value !== '(' && peek()!.value !== ';') {
+        consume();
+      }
+      if (peek() && peek()!.value === '(') {
+        consume('(');
+        let argExpr: { ast: ASTNode; place: string } | null = null;
+        if (peek() && peek()!.value !== ')') {
+          argExpr = parseExpression();
+        }
+        consume(')');
+        if (peek() && peek()!.value === ';') consume(';');
+        const argPlace = argExpr ? argExpr.place : '""';
+        emitQuad('param', argPlace, '_', '_', `param ${argPlace}`);
+        emitQuad('call', 'println', '1', '_', `call println, 1`);
+        targetList.push({
+          id: `node_${Math.random().toString(36).substring(2, 7)}`,
+          type: 'ConsolePrint',
+          value: 'System.out.println',
+          children: argExpr ? [argExpr.ast] : []
+        });
+        return;
+      }
+    }
+
     // 11. Expresión suelta (ej: matriz[i][j] + 5; o x = 5 + 1 > y * 2; o funcion(a, b);)
     const expr = parseExpression();
     if (peek() && peek()!.value === ';') consume(';');
@@ -775,6 +883,15 @@ export function compileToC3D(source: string): TranslationResult {
       if (isNum) {
         riscvLines.push(`  li   t0, ${q.arg1}`);
         riscvLines.push(`  sw   t0, ${destSlot}(s0)      # ${q.dest} = ${q.arg1}`);
+      } else if (q.arg1 === 'true') {
+        riscvLines.push(`  li   t0, 1                   # ${q.dest} = true (1)`);
+        riscvLines.push(`  sw   t0, ${destSlot}(s0)`);
+      } else if (q.arg1 === 'false') {
+        riscvLines.push(`  li   t0, 0                   # ${q.dest} = false (0)`);
+        riscvLines.push(`  sw   t0, ${destSlot}(s0)`);
+      } else if (q.arg1.startsWith('"')) {
+        riscvLines.push(`  la   t0, str_literal         # Dirección de cadena literal`);
+        riscvLines.push(`  sw   t0, ${destSlot}(s0)      # ${q.dest} = ${q.arg1}`);
       } else {
         const srcSlot = getSlot(q.arg1);
         riscvLines.push(`  lw   t0, ${srcSlot}(s0)      # Leer ${q.arg1}`);
@@ -787,6 +904,12 @@ export function compileToC3D(source: string): TranslationResult {
       const loadOperand = (arg: string, reg: string) => {
         if (/^[0-9]+$/.test(arg)) {
           riscvLines.push(`  li   ${reg}, ${arg}`);
+        } else if (arg === 'true') {
+          riscvLines.push(`  li   ${reg}, 1`);
+        } else if (arg === 'false') {
+          riscvLines.push(`  li   ${reg}, 0`);
+        } else if (arg.startsWith('"')) {
+          riscvLines.push(`  la   ${reg}, str_literal`);
         } else {
           const slot = getSlot(arg);
           riscvLines.push(`  lw   ${reg}, ${slot}(s0)      # Cargar ${arg}`);
@@ -806,6 +929,12 @@ export function compileToC3D(source: string): TranslationResult {
       const loadOperand = (arg: string, reg: string) => {
         if (/^[0-9]+$/.test(arg)) {
           riscvLines.push(`  li   ${reg}, ${arg}`);
+        } else if (arg === 'true') {
+          riscvLines.push(`  li   ${reg}, 1`);
+        } else if (arg === 'false') {
+          riscvLines.push(`  li   ${reg}, 0`);
+        } else if (arg.startsWith('"')) {
+          riscvLines.push(`  la   ${reg}, str_literal`);
         } else {
           const slot = getSlot(arg);
           riscvLines.push(`  lw   ${reg}, ${slot}(s0)      # Cargar ${arg}`);
@@ -896,14 +1025,35 @@ export function compileToC3D(source: string): TranslationResult {
       }
       riscvLines.push(`  bne  t0, zero, ${target}    # if (${q.arg1} != 0) goto ${target}`);
     }
-    // 7. Parámetros y Retorno
-    else if (q.op === 'param') {
-      const pSlot = getSlot(q.arg1);
-      riscvLines.push(`  lw   a0, ${pSlot}(s0)         # Parámetro en a0`);
-    } else if (q.op === 'call') {
+    // 7. Parámetros, Llamadas y Asignación Dinámica
+    else if (q.op === 'alloc') {
       const destSlot = getSlot(q.dest);
-      riscvLines.push(`  jal  ra, ${q.arg1}            # Invocación a subprograma`);
-      riscvLines.push(`  sw   a0, ${destSlot}(s0)      # Guardar retorno de a0 en ${q.dest}`);
+      riscvLines.push(`  li   t0, 0x1020              # Asignar bloque de memoria en Heap`);
+      riscvLines.push(`  sw   t0, ${destSlot}(s0)      # Guardar dirección base`);
+    } else if (q.op === 'param') {
+      if (q.arg1 === 'true') {
+        riscvLines.push(`  li   a0, 1                   # Parámetro booleano true`);
+      } else if (q.arg1 === 'false') {
+        riscvLines.push(`  li   a0, 0                   # Parámetro booleano false`);
+      } else if (/^[0-9]+$/.test(q.arg1)) {
+        riscvLines.push(`  li   a0, ${q.arg1}           # Parámetro constante`);
+      } else if (q.arg1.startsWith('"')) {
+        riscvLines.push(`  la   a0, str_literal         # Dirección de cadena literal`);
+      } else {
+        const pSlot = getSlot(q.arg1);
+        riscvLines.push(`  lw   a0, ${pSlot}(s0)         # Parámetro en a0`);
+      }
+    } else if (q.op === 'call') {
+      if (q.arg1 === 'println' || q.arg1 === 'print') {
+        riscvLines.push(`  li   a7, 4                   # Syscall ecall 4 (print_string)`);
+        riscvLines.push(`  ecall`);
+      } else {
+        riscvLines.push(`  jal  ra, ${q.arg1}            # Invocación a subprograma`);
+        if (q.dest && q.dest !== '_') {
+          const destSlot = getSlot(q.dest);
+          riscvLines.push(`  sw   a0, ${destSlot}(s0)      # Guardar retorno de a0 en ${q.dest}`);
+        }
+      }
     } else if (q.op === 'return') {
       if (/^[0-9]+$/.test(q.arg1)) {
         riscvLines.push(`  li   a0, ${q.arg1}           # Retorno constante`);

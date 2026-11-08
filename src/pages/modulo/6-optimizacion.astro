@@ -5,7 +5,7 @@ import CodeBlock from '../../components/CodeBlock.astro';
 
 <MainLayout
   title="Módulo 6: Generación y Optimización de Código"
-  description="Bloques básicos, grafos de flujo (CFG), DAG, optimizaciones locales y globales, propagación de constantes, dead code y asignación de registros."
+  description="Bloques básicos, grafos de flujo (CFG), DAG, optimizaciones locales y globales, propagación de constantes, dead code y asignación de registros por coloración de grafos."
   currentSlug="6-optimizacion"
 >
   <div class="space-y-12">
@@ -16,172 +16,519 @@ import CodeBlock from '../../components/CodeBlock.astro';
         <span class="text-slate-400">Back-End • Fase de Optimización</span>
       </div>
       <h1 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-        Generación y Optimización de Código: Bloques Básicos y Registros
+        Generación y Optimización de Código: Bloques Básicos, DAG y Registros
       </h1>
       <p class="text-base sm:text-lg text-slate-300 mt-2 leading-relaxed">
-        El optimizador busca producir código que se ejecute más rápido y ocupe menos espacio de memoria, preservando estrictamente la semántica original del programa. Análisis de flujo de control, DAG, optimizaciones de bucle y asignación de registros por coloración de grafos.
+        El optimizador busca producir código que se ejecute más rápido y ocupe menos espacio de memoria, preservando estrictamente la semántica original del programa. Análisis de flujo de control (CFG), simplificación local mediante Grafos Acíclicos Dirigidos (DAG), transformaciones de bucles y asignación de registros por coloración de grafos (Chaitin).
       </p>
 
       <div class="mt-4 p-3 bg-[#080d1a] rounded-lg border border-slate-800 text-xs font-mono text-slate-300 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <span class="text-cyan-400 font-bold">Respaldo Bibliográfico:</span>
-          <span>Ing. Mario Ramírez Tobar • "Generación de código Intermedio" (pág. 112-173) & Dragon Book (Cap. 8 y 9).</span>
+          <span>Ing. Mario Ramírez Tobar • "Generación de código Intermedio" (pág. 112-173) & Aho, Lam, Sethi, Ullman (Dragon Book, Cap. 8 y 9).</span>
         </div>
         <a href="/bibliografia#ref-c3d-pdf" class="text-purple-400 hover:underline">Ver referencias ↗</a>
       </div>
     </div>
 
     <!-- 1. Bloques Básicos y Grafos de Flujo de Control -->
-    <section id="bloques-basicos-cfg" class="space-y-4 scroll-mt-20">
-      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
-        <span class="text-cyan-400">1.</span> Particionamiento en Bloques Básicos y Grafo de Flujo (CFG)
-      </h2>
+    <section id="bloques-basicos-cfg" class="space-y-6 scroll-mt-20">
+      <div class="border-b border-slate-800 pb-2">
+        <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+          <span class="text-cyan-400">1.</span> Particionamiento en Bloques Básicos y Grafo de Flujo (CFG)
+        </h2>
+        <p class="text-sm text-slate-400 mt-1 font-mono">Control Flow Graph (CFG) • Algoritmo de Identificación de Líderes</p>
+      </div>
 
       <div class="prose text-sm sm:text-base text-slate-300 leading-relaxed space-y-3 font-sans">
         <p>
-          Un <strong>Bloque Básico</strong> es una secuencia contigua de instrucciones de código intermedio de tres direcciones que posee dos propiedades matemáticas inviolables:
+          Un <strong>Bloque Básico</strong> es una secuencia contigua de instrucciones de código intermedio de tres direcciones (C3D) que cumple dos propiedades matemáticas inviolables:
         </p>
-        <ol class="list-decimal list-inside space-y-1 pl-2 text-white font-mono">
-          <li>El flujo de control solo puede <strong>entrar por la primera instrucción</strong> del bloque (no hay saltos dirigidos al medio).</li>
-          <li>El flujo de control solo puede <strong>abandonar el bloque en la última instrucción</strong> (si se ejecuta la primera, todas las demás se ejecutan obligatoriamente en secuencia).</li>
+        <ol class="list-decimal list-inside space-y-1.5 pl-2 text-white font-mono text-xs sm:text-sm">
+          <li><strong>Entrada única:</strong> El flujo de control solo puede ingresar por la primera instrucción del bloque (no existe ningún salto en todo el programa con destino hacia una instrucción intermedia).</li>
+          <li><strong>Salida única:</strong> El flujo de control solo puede abandonar el bloque en la última instrucción (si se ejecuta la primera instrucción, todas las demás se ejecutan obligatoriamente en secuencia).</li>
         </ol>
       </div>
 
-      <div class="p-4 bg-[#0d1527] rounded-xl border border-slate-800 space-y-3">
-        <h3 class="text-sm font-bold text-cyan-400 font-mono">Algoritmo de Identificación de Líderes:</h3>
-        <p class="text-sm sm:text-base text-slate-300">
-          Para particionar cualquier secuencia de C3D en bloques básicos, primero identificamos las instrucciones que son <strong>Líderes</strong>:
+      <!-- Algoritmo de Líderes -->
+      <div class="p-5 bg-[#0d1527] rounded-xl border border-slate-800 space-y-4 shadow-lg">
+        <h3 class="text-sm font-bold text-cyan-400 font-mono uppercase tracking-wider">
+          Algoritmo Formal: Identificación de Instrucciones Líderes
+        </h3>
+        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed font-sans">
+          Para descomponer cualquier programa C3D en bloques básicos independientes, se localizan primero todas las instrucciones que actúan como <strong>Líderes</strong> mediante tres reglas exhaustivas:
         </p>
-        <ul class="space-y-1.5 text-sm text-slate-400 list-disc list-inside font-sans">
-          <li><strong>Regla 1:</strong> La primera instrucción de todo el programa es un líder.</li>
-          <li><strong>Regla 2:</strong> Cualquier instrucción que sea el <em>destino</em> de un salto condicional o incondicional (es decir, una etiqueta <code class="text-white">etq:</code>) es un líder.</li>
-          <li><strong>Regla 3:</strong> Cualquier instrucción que se encuentre <em>inmediatamente después</em> de un salto condicional o incondicional (<code class="text-white">goto</code> o <code class="text-white">if</code>) es un líder.</li>
-        </ul>
-        <p class="text-xs text-white pt-2 border-t border-slate-800 font-mono">
-          Para cada líder, su bloque básico comprende desde ese líder inclusive hasta justo antes del siguiente líder o el final del programa.
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs font-mono">
+          <div class="p-3 bg-[#080d1a] border border-cyan-500/30 rounded-xl space-y-1">
+            <span class="text-cyan-400 font-bold block">Regla 1 (Inicial)</span>
+            <p class="text-slate-300 font-sans">La primera instrucción de todo el programa intermedio es automáticamente un líder.</p>
+          </div>
+          <div class="p-3 bg-[#080d1a] border border-purple-500/30 rounded-xl space-y-1">
+            <span class="text-purple-400 font-bold block">Regla 2 (Destinos)</span>
+            <p class="text-slate-300 font-sans">Cualquier instrucción que sea el <em>destino</em> de un salto condicional o incondicional (<code class="text-purple-300">goto L</code>) es un líder.</p>
+          </div>
+          <div class="p-3 bg-[#080d1a] border border-sky-500/30 rounded-xl space-y-1">
+            <span class="text-sky-400 font-bold block">Regla 3 (Siguientes)</span>
+            <p class="text-slate-300 font-sans">Cualquier instrucción que se encuentre <em>inmediatamente después</em> de un salto (<code class="text-sky-300">goto</code> o <code class="text-sky-300">if...goto</code>) es un líder.</p>
+          </div>
+        </div>
+
+        <div class="p-3.5 bg-cyan-950/20 border border-cyan-500/30 rounded-xl text-xs text-cyan-200 font-mono">
+          <strong>Definición del Bloque Básico:</strong> El bloque básico de un líder comprende desde ese líder inclusive hasta la instrucción inmediatamente anterior al siguiente líder, o hasta el final del programa.
+        </div>
+      </div>
+
+      <!-- Ejemplo Completo Desarrollado Paso a Paso -->
+      <div class="bg-[#080d1a] p-5 sm:p-6 rounded-2xl border border-slate-800 space-y-4">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <span class="text-purple-400">Caso Práctico Desarrollado:</span>
+          <span>Particionamiento y Construcción del Grafo de Flujo (CFG)</span>
+        </h3>
+        <p class="text-xs sm:text-sm text-slate-300 font-sans">
+          Consideremos el siguiente programa en C3D que suma los elementos positivos de un arreglo unidimensional:
         </p>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div>
+            <span class="text-xs font-mono text-slate-400 block mb-1">Código C3D Numerado:</span>
+            <CodeBlock
+              language="c3d"
+              code={`(1)  i = 0
+(2)  suma = 0
+(3)  L1:
+(4)  if i >= 10 goto L4
+(5)  t1 = i * 4
+(6)  t2 = arr[t1]
+(7)  if t2 <= 0 goto L3
+(8)  suma = suma + t2
+(9)  L3:
+(10) i = i + 1
+(11) goto L1
+(12) L4:
+(13) return suma`}
+            />
+          </div>
+
+          <div class="space-y-3 text-xs font-sans">
+            <span class="text-xs font-mono text-cyan-400 font-bold block">Análisis de Líderes:</span>
+            <ul class="space-y-1.5 text-slate-300 list-disc list-inside">
+              <li><strong class="text-white">(1)</strong> Líder por <strong>Regla 1</strong> (primera instrucción).</li>
+              <li><strong class="text-white">(3)</strong> Líder por <strong>Regla 2</strong> (destino del salto de la línea 11 a <code>L1</code>).</li>
+              <li><strong class="text-white">(5)</strong> Líder por <strong>Regla 3</strong> (siguiente al salto condicional <code>if...goto</code> de la línea 4).</li>
+              <li><strong class="text-white">(8)</strong> Líder por <strong>Regla 3</strong> (siguiente al salto condicional de la línea 7).</li>
+              <li><strong class="text-white">(9)</strong> Líder por <strong>Regla 2</strong> (destino del salto de la línea 7 a <code>L3</code>).</li>
+              <li><strong class="text-white">(12)</strong> Líder por <strong>Regla 2</strong> (destino del salto de la línea 4 a <code>L4</code>) y <strong>Regla 3</strong> (tras el salto incondicional de la línea 11).</li>
+            </ul>
+
+            <div class="p-3 bg-[#0d1527] border border-slate-700/80 rounded-xl space-y-1 font-mono text-[11px]">
+              <div class="text-purple-300 font-bold">Bloques Resultantes:</div>
+              <div>• <strong>B1:</strong> (1) a (2) [Inicialización]</div>
+              <div>• <strong>B2:</strong> (3) a (4) [Test del bucle]</div>
+              <div>• <strong>B3:</strong> (5) a (7) [Lectura de arreglo y test positivo]</div>
+              <div>• <strong>B4:</strong> (8) [Acumulación]</div>
+              <div>• <strong>B5:</strong> (9) a (11) [Incremento y retroceso]</div>
+              <div>• <strong>B6:</strong> (12) a (13) [Salida y retorno]</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Diagrama del CFG -->
+        <div class="pt-3 border-t border-slate-800">
+          <span class="text-xs font-mono text-slate-400 block mb-2 font-bold">Topología del Grafo de Flujo de Control (CFG):</span>
+          <div class="p-4 bg-[#0a101f] rounded-xl border border-slate-800 font-mono text-xs text-cyan-300 whitespace-pre overflow-x-auto leading-relaxed">
+{`       [ B1: Inicialización ]
+                 │
+                 ▼
+          ┌─►[ B2: if i >= 10 ]──────(true)───────┐
+          │      │ (false)                         │
+          │      ▼                                 ▼
+          │  [ B3: if t2 <= 0 ]──(true)──┐   [ B6: return suma ]
+          │      │ (false)               │
+          │      ▼                       │
+          │  [ B4: suma += t2 ]          │
+          │      │                       │
+          │      ▼                       │
+          │  [ B5: i++; goto L1 ]◄───────┘
+          │      │
+          └──────┘ (Back-edge)`}
+          </div>
+        </div>
       </div>
     </section>
 
     <!-- 2. Representación en Grafos Acíclicos Dirigidos (DAG) -->
-    <section id="dag-bloques-basicos" class="space-y-4 scroll-mt-20">
-      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
-        <span class="text-cyan-400">2.</span> Representación en Grafos Acíclicos Dirigidos (DAG)
-      </h2>
+    <section id="dag-bloques-basicos" class="space-y-6 scroll-mt-20">
+      <div class="border-b border-slate-800 pb-2">
+        <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+          <span class="text-cyan-400">2.</span> Representación en Grafos Acíclicos Dirigidos (DAG)
+        </h2>
+        <p class="text-sm text-slate-400 mt-1 font-mono">Optimización Local • Subexpresiones Comunes y Eliminación de Temporales</p>
+      </div>
 
-      <p class="text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
-        Para optimizar un bloque básico localmente, el compilador construye un <strong>DAG (Directed Acyclic Graph)</strong>:
-      </p>
+      <div class="prose text-sm sm:text-base text-slate-300 leading-relaxed space-y-3 font-sans">
+        <p>
+          Un <strong>DAG (Directed Acyclic Graph)</strong> es una estructura de datos canónica construida para cada bloque básico individual. A diferencia de un árbol sintáctico estándar donde los nodos con el mismo cálculo se duplican, en un DAG <strong>los cálculos idénticos convergen en un único nodo compartido</strong>.
+        </p>
+      </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4 text-xs font-sans">
-        <div class="p-4 bg-[#080d1a] rounded-xl border border-slate-800 space-y-2">
-          <strong class="text-cyan-400 font-mono block">Estructura del DAG:</strong>
-          <ul class="space-y-1 text-slate-400 list-disc list-inside">
-            <li>Las <strong>hojas</strong> representan los valores iniciales de variables y literales constantes.</li>
-            <li>Los <strong>nodos interiores</strong> representan operadores aplicados a sus hijos.</li>
-            <li>A cada nodo se le asocia una lista de <strong>identificadores</strong> (variables que actualmente poseen el valor calculado por ese nodo).</li>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-sans">
+        <div class="p-4 bg-[#0d1527] rounded-xl border border-slate-800 space-y-2">
+          <strong class="text-cyan-400 font-mono text-sm block">Topología del DAG en Compiladores:</strong>
+          <ul class="space-y-1.5 text-slate-300 list-disc list-inside">
+            <li><strong>Hojas:</strong> Representan los identificadores iniciales (variables al ingresar al bloque) o literales constantes.</li>
+            <li><strong>Nodos Interiores:</strong> Representan operadores aritméticos, lógicos o accesos a memoria indexada.</li>
+            <li><strong>Lista de Nombres:</strong> A cada nodo se le asocia una lista de variables o temporales que actualmente contienen el valor computado por ese nodo.</li>
           </ul>
         </div>
 
-        <div class="p-4 bg-[#080d1a] rounded-xl border border-slate-800 space-y-2">
-          <strong class="text-emerald-400 font-mono block">Detección de Subexpresiones Comunes:</strong>
-          <p class="text-slate-400">
-            Antes de crear un nuevo nodo para una operación <code class="text-white">op(n1, n2)</code>, el compilador busca si ya existe un nodo idéntico con el mismo operador y los mismos hijos en el DAG. Si existe, simplemente añade la variable a la lista de ese nodo existente, <em>eliminando cálculos redundantes</em>.
+        <div class="p-4 bg-[#0d1527] rounded-xl border border-slate-800 space-y-2">
+          <strong class="text-emerald-400 font-mono text-sm block">Regla de Construcción Anti-Redundancia:</strong>
+          <p class="text-slate-300 leading-relaxed">
+            Al evaluar una instrucción <code class="text-white">x = y op z</code>:
+          </p>
+          <ol class="space-y-1 text-slate-400 list-decimal list-inside">
+            <li>Se buscan los nodos correspondientes a los operandos <code class="text-cyan-300">y</code> y <code class="text-cyan-300">z</code>.</li>
+            <li>Se busca si ya existe un nodo interior con el operador <code class="text-white">op</code> y con hijos <code class="text-cyan-300">(y, z)</code>.</li>
+            <li><strong>Si ya existe:</strong> Se agrega <code class="text-white">x</code> a su lista de etiquetas sin crear ningún nodo nuevo.</li>
+            <li><strong>Si no existe:</strong> Se crea un nuevo nodo con hijos <code class="text-cyan-300">(y, z)</code> y se le asigna <code class="text-white">x</code>.</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- Ejemplo de Simplificación de DAG -->
+      <div class="p-5 bg-[#080d1a] rounded-2xl border border-slate-800 space-y-4">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <span class="text-emerald-400">Caso Práctico Desarrollado:</span>
+          <span>Detección de Subexpresiones Comunes con Arreglos</span>
+        </h3>
+        <p class="text-xs sm:text-sm text-slate-300 font-sans">
+          Examinemos la transformación de un bloque con cálculos de índice redundantes:
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <span class="text-xs font-mono text-rose-400 font-bold block mb-1">C3D Original (Sin Optimizar):</span>
+            <CodeBlock
+              language="c3d"
+              code={`// Cálculo redundante del offset
+t1 = 4 * i
+t2 = a[t1]
+t3 = 4 * i     // ¡Redundante!
+t4 = b[t3]
+t5 = t2 + t4
+t6 = 4 * i     // ¡Redundante!
+a[t6] = t5`}
+            />
+          </div>
+
+          <div>
+            <span class="text-xs font-mono text-emerald-400 font-bold block mb-1">C3D Optimizado tras el DAG:</span>
+            <CodeBlock
+              language="c3d"
+              code={`// t1 es reutilizado directamente
+t1 = 4 * i
+t2 = a[t1]
+t4 = b[t1]
+t5 = t2 + t4
+a[t1] = t5
+// Se eliminaron 2 multiplicaciones`}
+            />
+          </div>
+        </div>
+
+        <div class="p-3 bg-[#0a101f] border border-slate-800 rounded-xl text-xs font-mono text-slate-300 space-y-1">
+          <span class="text-cyan-400 font-bold block">Estructura del DAG Resultante:</span>
+          <p class="text-slate-400 font-sans">
+            El nodo interior con operador <code class="text-white">*</code> e hijos <code class="text-cyan-300">4</code> e <code class="text-cyan-300">i</code> recibe las etiquetas <code class="text-white">&#123;t1, t3, t6&#125;</code>. Al regenerar el código intermedio, el compilador solo emite la instrucción una vez para <code class="text-cyan-300">t1</code> y reemplaza todas las referencias a <code class="text-purple-300">t3</code> y <code class="text-purple-300">t6</code> por <code class="text-cyan-300">t1</code>.
           </p>
         </div>
       </div>
     </section>
 
-    <!-- 3. Optimizaciones Locales y Globales -->
-    <section id="optimizaciones-locales" class="space-y-4 scroll-mt-20">
-      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
-        <span class="text-cyan-400">3.</span> Catálogo de Técnicas de Optimización
-      </h2>
+    <!-- 3. Optimizaciones Locales: Plegado, Propagación y Reducción de Fuerza -->
+    <section id="optimizaciones-locales" class="space-y-6 scroll-mt-20">
+      <div class="border-b border-slate-800 pb-2">
+        <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+          <span class="text-cyan-400">3.</span> Optimizaciones Locales: Plegado, Propagación y Reducción de Fuerza
+        </h2>
+        <p class="text-sm text-slate-400 mt-1 font-mono">Constant Folding • Constant Propagation • Strength Reduction • Peephole Optimization</p>
+      </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-4 text-xs font-sans">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-sans">
         <!-- Plegado y propagación -->
         <div class="p-4 bg-[#0d1527] rounded-xl border border-slate-800 space-y-2">
           <h3 class="font-bold text-purple-400 font-mono text-sm">Plegado y Propagación de Constantes</h3>
-          <p class="text-slate-400 leading-relaxed">
-            <strong>Plegado (Constant Folding):</strong> Evaluar en compilación expresiones cuyos operandos son constantes fijas (ej. transformar <code class="text-white">25 + 12</code> directamente en <code class="text-emerald-300">37</code>).
+          <p class="text-slate-300 leading-relaxed">
+            <strong>Plegado (Constant Folding):</strong> Evaluar en tiempo de compilación expresiones compuestas exclusivamente por constantes numéricas o booleanas.
           </p>
-          <p class="text-slate-400 leading-relaxed">
-            <strong>Propagación (Constant Propagation):</strong> Si se sabe que una variable tiene un valor constante inmutable en un punto del programa, reemplazar sus ocurrencias posteriores directamente por el literal.
+          <div class="p-2.5 bg-[#080d1a] rounded font-mono text-xs text-cyan-300 space-y-1">
+            <div>t1 = 60 * 60 * 24  ➔  <span class="text-emerald-400 font-bold">t1 = 86400</span></div>
+            <div>t2 = 5 > 2          ➔  <span class="text-emerald-400 font-bold">t2 = 1 (true)</span></div>
+          </div>
+          <p class="text-slate-300 leading-relaxed mt-2">
+            <strong>Propagación (Constant Propagation):</strong> Si a una variable se le asigna un valor constante inmutable, reemplazar todos sus usos posteriores por dicho valor literal hasta que ocurra una redefinición.
           </p>
         </div>
 
         <!-- Reducción de fuerza -->
         <div class="p-4 bg-[#0d1527] rounded-xl border border-slate-800 space-y-2">
           <h3 class="font-bold text-cyan-400 font-mono text-sm">Reducción de Fuerza (Strength Reduction)</h3>
-          <p class="text-slate-400 leading-relaxed">
-            Reemplaza operaciones aritméticas de alto coste computacional (como multiplicaciones y divisiones enteras) por operaciones equivalentes más veloces en el silicio.
+          <p class="text-slate-300 leading-relaxed">
+            Sustituye operaciones aritméticas de alto coste en ciclos de reloj (como multiplicaciones y divisiones enteras de 32 bits) por instrucciones equivalentes mucho más veloces en el silicio (como desplazamientos de bits):
           </p>
-          <div class="p-2 bg-[#080d1a] rounded font-mono text-xs text-white space-y-0.5">
-            <p>x * 2 ➔ <span class="text-cyan-400">slli t0, t0, 1</span> (shift izquierdo de 1 bit)</p>
-            <p>x * 8 ➔ <span class="text-cyan-400">slli t0, t0, 3</span> (shift izquierdo de 3 bits)</p>
+          <div class="p-2.5 bg-[#080d1a] rounded font-mono text-xs text-white space-y-1">
+            <div class="flex justify-between">
+              <span>x * 2</span>
+              <span class="text-cyan-400">slli t0, t0, 1</span>
+            </div>
+            <div class="flex justify-between">
+              <span>x * 8</span>
+              <span class="text-cyan-400">slli t0, t0, 3</span>
+            </div>
+            <div class="flex justify-between">
+              <span>x / 4 (entera)</span>
+              <span class="text-cyan-400">srai t0, t0, 2</span>
+            </div>
+            <div class="flex justify-between">
+              <span>x % 8 (resto)</span>
+              <span class="text-cyan-400">andi t0, t0, 7</span>
+            </div>
           </div>
         </div>
+      </div>
 
-        <!-- Eliminación de código muerto -->
-        <div class="p-4 bg-[#0d1527] rounded-xl border border-slate-800 space-y-2">
-          <h3 class="font-bold text-rose-400 font-mono text-sm">Eliminación de Código Muerto (DCE)</h3>
-          <p class="text-slate-400 leading-relaxed">
-            Instrucciones cuyo resultado nunca es utilizado por ninguna sentencia posterior en el flujo de ejecución, o bloques condicionales cuya condición es demostrablemente falsa en compilación (ej. <code class="text-white">if (false) &#123; ... &#125;</code>) se eliminan íntegramente del binario.
-          </p>
-        </div>
+      <!-- Optimización por Mirilla (Peephole) -->
+      <div class="p-5 bg-[#080d1a] rounded-xl border border-slate-800 space-y-3">
+        <h3 class="text-sm font-bold text-amber-300 font-mono uppercase tracking-wider">
+          Optimización por Mirilla (Peephole Optimization)
+        </h3>
+        <p class="text-xs sm:text-sm text-slate-300 font-sans leading-relaxed">
+          Examina una pequeña ventana móvil (de 2 a 4 instrucciones contiguas de código objeto) para identificar patrones ineficientes generados por la traducción ingenua:
+        </p>
 
-        <!-- Optimizaciones de Bucles -->
-        <div class="p-4 bg-[#0d1527] rounded-xl border border-slate-800 space-y-2">
-          <h3 class="font-bold text-amber-300 font-mono text-sm">Transformaciones de Bucles</h3>
-          <p class="text-slate-400 leading-relaxed">
-            <strong>Movimiento de código invariable (LICM):</strong> Extraer del cuerpo del bucle aquellas expresiones que calculan el mismo valor en cada iteración y colocarlas en el pre-encabezado.
-          </p>
-          <p class="text-slate-400 leading-relaxed">
-            <strong>Desenrollado de bucles (Loop Unrolling):</strong> Replicar el cuerpo del bucle varias veces para reducir la cantidad de instrucciones de salto y comprobación de la condición.
-          </p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
+          <div class="p-3 bg-[#0d1527] border border-slate-700/80 rounded-xl space-y-1">
+            <strong class="text-white block">1. Cargas Redundantes</strong>
+            <p class="text-rose-400">sw a0, -8(fp)</p>
+            <p class="text-rose-400">lw a0, -8(fp)</p>
+            <p class="text-emerald-400 pt-1 border-t border-slate-800">➔ Elimina el 'lw'</p>
+          </div>
+
+          <div class="p-3 bg-[#0d1527] border border-slate-700/80 rounded-xl space-y-1">
+            <strong class="text-white block">2. Identidades Algebraicas</strong>
+            <p class="text-rose-400">addi t0, t0, 0</p>
+            <p class="text-rose-400">mul  t1, t1, 1</p>
+            <p class="text-emerald-400 pt-1 border-t border-slate-800">➔ Ambas se eliminan</p>
+          </div>
+
+          <div class="p-3 bg-[#0d1527] border border-slate-700/80 rounded-xl space-y-1">
+            <strong class="text-white block">3. Saltos Redundantes</strong>
+            <p class="text-rose-400">goto L1</p>
+            <p class="text-rose-400">L1: addi t0, t1, 1</p>
+            <p class="text-emerald-400 pt-1 border-t border-slate-800">➔ Elimina 'goto L1'</p>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- 4. Asignación de Registros por Coloración de Grafos -->
-    <section id="asignacion-registros" class="space-y-4 scroll-mt-20">
-      <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
-        <span class="text-cyan-400">4.</span> Asignación de Registros y Coloración de Grafos (Chaitin)
-      </h2>
+    <!-- 4. Optimizaciones Globales y Transformaciones de Bucles -->
+    <section id="optimizaciones-globales" class="space-y-6 scroll-mt-20">
+      <div class="border-b border-slate-800 pb-2">
+        <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+          <span class="text-cyan-400">4.</span> Optimizaciones Globales y Transformaciones de Bucles
+        </h2>
+        <p class="text-sm text-slate-400 mt-1 font-mono">Loop-Invariant Code Motion (LICM) • Loop Unrolling • Inducción</p>
+      </div>
 
-      <p class="text-sm sm:text-base text-slate-300 leading-relaxed font-sans">
-        Los registros de la CPU son la memoria más rápida del computador (acceso en 1 ciclo de reloj), pero su número es estrictamente limitado (en RISC-V RV32I disponemos de 32 registros de propósito general). El compilador debe resolver el problema de mapear cientos de variables temporales (<code class="text-cyan-400">t1..tn</code>) sobre los $k$ registros disponibles.
-      </p>
+      <div class="prose text-sm sm:text-base text-slate-300 leading-relaxed space-y-3 font-sans">
+        <p>
+          Los bucles representan donde los programas consumen la inmensa mayoría de su tiempo de ejecución (la célebre regla del <strong>90/10</strong>: el 90% del tiempo de CPU se pasa en el 10% del código). Por ello, las optimizaciones de bucles generan los impactos de rendimiento más drásticos.
+        </p>
+      </div>
 
-      <div class="bg-[#080d1a] p-5 rounded-xl border border-slate-800 space-y-3 text-xs font-sans">
-        <h3 class="font-bold text-white font-mono text-sm">Algoritmo de Chaitin:</h3>
-        <ol class="space-y-2 text-slate-300 list-decimal list-inside">
-          <li>
-            <strong>Análisis de Liveness (Variables Vivas):</strong> Se determina el rango de vida de cada variable: el intervalo entre su definición y su último uso.
-          </li>
-          <li>
-            <strong>Construcción del Grafo de Interferencia:</strong> Cada variable temporal es un nodo. Se dibuja una arista entre dos nodos si sus variables están vivas simultáneamente (no pueden compartir el mismo registro físico).
-          </li>
-          <li>
-            <strong>$k$-Coloración del Grafo:</strong> Se intenta colorear el grafo con $k$ colores (donde cada color representa un registro físico de la CPU) de manera que ningún par de nodos conectados comparta el mismo color.
-          </li>
-          <li>
-            <strong>Spill a Memoria (Derramamiento):</strong> Si el grafo no es $k$-coloreable, se selecciona la variable de menor frecuencia de uso o mayor ciclo de vida y se almacena en una ranura de la pila en memoria RAM (<code class="text-purple-400">-offset(fp)</code>), liberando el registro.
-          </li>
-        </ol>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-sans">
+        <!-- LICM -->
+        <div class="p-4 bg-[#0d1527] rounded-xl border border-slate-800 space-y-3">
+          <h3 class="font-bold text-sky-400 font-mono text-sm">Movimiento de Código Invariable (LICM)</h3>
+          <p class="text-slate-300 leading-relaxed">
+            Identifica expresiones dentro del ciclo cuyos operandos no se modifican en ninguna iteración y las <strong>traslada al pre-encabezado del bucle</strong> (*pre-header*), ejecutándolas una sola vez en lugar de $N$ veces.
+          </p>
+          <div class="grid grid-cols-1 gap-2 font-mono text-[11px]">
+            <div class="p-2 bg-[#080d1a] border border-rose-500/30 rounded text-slate-300">
+              <span class="text-rose-400 block font-bold mb-1">Antes de LICM (N ejecuciones de z * w):</span>
+              <div>while (i &lt; n) &#123;</div>
+              <div class="pl-3 text-rose-300">val = z * w + i;  // z y w no cambian</div>
+              <div class="pl-3">i = i + 1;</div>
+              <div>&#125;</div>
+            </div>
+            <div class="p-2 bg-[#080d1a] border border-emerald-500/30 rounded text-slate-300">
+              <span class="text-emerald-400 block font-bold mb-1">Después de LICM (1 ejecución en pre-header):</span>
+              <div class="text-emerald-300 font-bold">t_inv = z * w; // ¡Pre-header!</div>
+              <div>while (i &lt; n) &#123;</div>
+              <div class="pl-3 text-emerald-300">val = t_inv + i;</div>
+              <div class="pl-3">i = i + 1;</div>
+              <div>&#125;</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loop Unrolling -->
+        <div class="p-4 bg-[#0d1527] rounded-xl border border-slate-800 space-y-3">
+          <h3 class="font-bold text-purple-400 font-mono text-sm">Desenrollado de Bucles (Loop Unrolling)</h3>
+          <p class="text-slate-300 leading-relaxed">
+            Reclica el cuerpo del bucle varias veces para reducir el coste proporcional de las instrucciones de bifurcación condicional (<code class="text-purple-300">bge</code>) y de incremento de la variable de inducción.
+          </p>
+          <div class="p-3 bg-[#080d1a] rounded-xl border border-slate-800 space-y-2">
+            <strong class="text-white block font-mono">Factor de desenrollado (k = 2):</strong>
+            <p class="text-slate-400 leading-relaxed">
+              En vez de verificar la condición en cada incremento de <code class="text-cyan-300">i</code>, se procesan dos elementos por iteración (<code class="text-white">a[i]</code> y <code class="text-white">a[i+1]</code>), y se incrementa <code class="text-cyan-300">i += 2</code>, <strong>reduciendo los saltos condicionales en un 50%</strong>.
+            </p>
+            <div class="text-[11px] font-mono text-amber-300 pt-1 border-t border-slate-800">
+              ⚠️ <em>Trade-off:</em> Incrementa el tamaño del archivo binario pero disminuye las fallas de predicción de saltos (*branch mispredictions*).
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Eliminación de Código Muerto y Análisis de Liveness -->
+    <section id="eliminacion-codigo-muerto" class="space-y-6 scroll-mt-20">
+      <div class="border-b border-slate-800 pb-2">
+        <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+          <span class="text-cyan-400">5.</span> Eliminación de Código Muerto y Análisis de Liveness
+        </h2>
+        <p class="text-sm text-slate-400 mt-1 font-mono">Dead Code Elimination (DCE) • Ecuaciones de Flujo de Datos • Variables Vivas</p>
+      </div>
+
+      <div class="prose text-sm sm:text-base text-slate-300 leading-relaxed space-y-3 font-sans">
+        <p>
+          Una instrucción de C3D representa <strong>Código Muerto</strong> si calcula un valor que nunca será leído en ningún camino futuro de ejecución del programa, o si se encuentra dentro de un bloque condicional inalcanzable.
+        </p>
+      </div>
+
+      <!-- Ecuaciones de Liveness -->
+      <div class="p-5 bg-[#080d1a] rounded-2xl border border-slate-800 space-y-4">
+        <h3 class="text-base font-bold text-white flex items-center gap-2 font-mono">
+          <span class="text-rose-400">Ecuaciones de Análisis de Flujo de Datos (Liveness):</span>
+        </h3>
+        <p class="text-xs sm:text-sm text-slate-300 font-sans leading-relaxed">
+          Una variable <code class="text-cyan-300">x</code> está <strong>Viva</strong> en un punto $p$ si existe una trayectoria desde $p$ hasta un uso de <code class="text-cyan-300">x</code> que no pase por ninguna redefinición de <code class="text-cyan-300">x</code>. Este análisis se propaga en sentido <em>hacia atrás</em> (*backward analysis*):
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-xs">
+          <div class="p-3.5 bg-[#0d1527] border border-cyan-500/30 rounded-xl space-y-2">
+            <span class="text-cyan-400 font-bold block">1. Conjunto IN[B] (Entrada del Bloque):</span>
+            <div class="text-sm text-white">IN[B] = USE[B] ∪ (OUT[B] - DEF[B])</div>
+            <p class="text-[11px] text-slate-400 font-sans">
+              Variables utilizadas en el bloque antes de ser redefinidas, más las variables que sobreviven a la salida sin ser alteradas.
+            </p>
+          </div>
+
+          <div class="p-3.5 bg-[#0d1527] border border-purple-500/30 rounded-xl space-y-2">
+            <span class="text-purple-400 font-bold block">2. Conjunto OUT[B] (Salida del Bloque):</span>
+            <div class="text-sm text-white">OUT[B] = ⋃ &#123; IN[S] : S ∈ SUCC[B] &#125;</div>
+            <p class="text-[11px] text-slate-400 font-sans">
+              La unión de las variables vivas a la entrada de todos los bloques sucesores de $B$.
+            </p>
+          </div>
+        </div>
+
+        <div class="p-3.5 bg-rose-950/20 border border-rose-500/30 rounded-xl text-xs text-rose-200 font-mono">
+          <strong>Criterio de Poda (DCE):</strong> Si se tiene una instrucción <code class="text-white">x = y + z</code> y <code class="text-white">x ∉ OUT[instrucción]</code> (es decir, $x$ no está viva después de esa sentencia), la instrucción <strong>se elimina por completo</strong>.
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Asignación de Registros por Coloración de Grafos (Chaitin) -->
+    <section id="asignacion-registros" class="space-y-6 scroll-mt-20">
+      <div class="border-b border-slate-800 pb-2">
+        <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2">
+          <span class="text-cyan-400">6.</span> Asignación de Registros y Coloración de Grafos (Chaitin)
+        </h2>
+        <p class="text-sm text-slate-400 mt-1 font-mono">Interference Graph • Algoritmo de Kempe • Spilling a Memoria en -offset(fp)</p>
+      </div>
+
+      <div class="prose text-sm sm:text-base text-slate-300 leading-relaxed space-y-3 font-sans">
+        <p>
+          Los registros de la CPU representan el nivel más rápido de la jerarquía de memoria (latencia de 1 ciclo), pero su disponibilidad física es finita (en la arquitectura <strong>RISC-V RV32I</strong> contamos con 32 registros, de los cuales típicamente entre 7 y 18 están disponibles para temporales y variables locales).
+        </p>
+        <p>
+          El compilador debe mapear un número arbitrario de variables simbólicas y temporales (<code class="text-cyan-300">t0..tn</code>) sobre los $k$ registros físicos disponibles. Gregory Chaitin demostró que este problema es isomorfo al problema clásico de <strong>$k$-Coloración de Grafos</strong>, el cual es NP-completo.
+        </p>
+      </div>
+
+      <!-- Algoritmo de Chaitin Paso a Paso -->
+      <div class="bg-[#080d1a] p-5 sm:p-6 rounded-2xl border border-slate-800 space-y-4">
+        <h3 class="text-base font-bold text-white font-mono flex items-center gap-2">
+          <span class="text-purple-400">Fases del Algoritmo de Chaitin con Simplificación de Kempe:</span>
+        </h3>
+
+        <div class="space-y-3 text-xs sm:text-sm font-sans text-slate-300">
+          <div class="p-3.5 bg-[#0d1527] rounded-xl border border-slate-800 flex items-start gap-3">
+            <span class="font-mono font-bold text-cyan-400 bg-cyan-950/60 px-2.5 py-1 rounded-lg border border-cyan-500/40 shrink-0">1</span>
+            <div>
+              <strong class="text-white font-mono block">Cálculo de Intervalos de Vida (Live Ranges):</strong>
+              <p class="text-slate-400 mt-0.5">Se computa para cada variable el rango exacto de instrucciones donde está viva simultáneamente.</p>
+            </div>
+          </div>
+
+          <div class="p-3.5 bg-[#0d1527] rounded-xl border border-slate-800 flex items-start gap-3">
+            <span class="font-mono font-bold text-purple-400 bg-purple-950/60 px-2.5 py-1 rounded-lg border border-purple-500/40 shrink-0">2</span>
+            <div>
+              <strong class="text-white font-mono block">Construcción del Grafo de Interferencia:</strong>
+              <p class="text-slate-400 mt-0.5">Cada variable es un nodo. Se dibuja una <strong>arista</strong> entre dos nodos si ambas variables están vivas en la misma instrucción (lo que impide que compartan el mismo registro físico).</p>
+            </div>
+          </div>
+
+          <div class="p-3.5 bg-[#0d1527] rounded-xl border border-slate-800 flex items-start gap-3">
+            <span class="font-mono font-bold text-sky-400 bg-sky-950/60 px-2.5 py-1 rounded-lg border border-sky-500/40 shrink-0">3</span>
+            <div>
+              <strong class="text-white font-mono block">Simplificación de Kempe:</strong>
+              <p class="text-slate-400 mt-0.5">Se busca un nodo con grado $&lt; k$ (menos de $k$ vecinos). Si existe, se retira del grafo y se apila en una pila LIFO. Se repite hasta vaciar el grafo.</p>
+            </div>
+          </div>
+
+          <div class="p-3.5 bg-[#0d1527] rounded-xl border border-slate-800 flex items-start gap-3">
+            <span class="font-mono font-bold text-rose-400 bg-rose-950/60 px-2.5 py-1 rounded-lg border border-rose-500/40 shrink-0">4</span>
+            <div>
+              <strong class="text-white font-mono block">Spilling Heurístico a Memoria (Derramamiento):</strong>
+              <p class="text-slate-400 mt-0.5">Si todos los nodos restantes tienen grado $\ge k$, se elige el nodo de menor frecuencia de uso o que no pertenezca a bucles internos y se marca para <strong>Spill</strong>: se almacenará en la pila con offset relativo a <code class="text-purple-300">-offset(fp)</code> mediante <code class="text-white">sw</code> y <code class="text-white">lw</code>.</p>
+            </div>
+          </div>
+
+          <div class="p-3.5 bg-[#0d1527] rounded-xl border border-slate-800 flex items-start gap-3">
+            <span class="font-mono font-bold text-emerald-400 bg-emerald-950/60 px-2.5 py-1 rounded-lg border border-emerald-500/40 shrink-0">5</span>
+            <div>
+              <strong class="text-white font-mono block">Selección y Asignación de Registros:</strong>
+              <p class="text-slate-400 mt-0.5">Se desapilan los nodos uno por uno y se les asigna un color (registro físico) que no haya sido utilizado por ninguno de sus vecinos adyacentes en el grafo original.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Demostración en Código RISC-V -->
+        <div class="pt-4 border-t border-slate-800 space-y-2">
+          <span class="text-xs font-mono text-cyan-400 font-bold block">Ejemplo de Mapeo a Registros RISC-V con k=3 (t0, t1, t2):</span>
+          <div class="p-4 bg-[#0a101f] rounded-xl border border-slate-800 font-mono text-xs text-slate-300 space-y-1">
+            <div class="text-slate-400"># Variable 'a' asignada a t0, 'b' asignada a t1, 'c' derramada a la pila -12(fp)</div>
+            <div><span class="text-pink-400">li</span>   <span class="text-cyan-300">t0</span>, 15          <span class="text-slate-500"># a = 15</span></div>
+            <div><span class="text-pink-400">li</span>   <span class="text-cyan-300">t1</span>, 30          <span class="text-slate-500"># b = 30</span></div>
+            <div><span class="text-pink-400">add</span>  <span class="text-cyan-300">t2</span>, <span class="text-cyan-300">t0</span>, <span class="text-cyan-300">t1</span>      <span class="text-slate-500"># c = a + b</span></div>
+            <div><span class="text-pink-400">sw</span>   <span class="text-cyan-300">t2</span>, -12(<span class="text-cyan-300">s0</span>)     <span class="text-slate-500"># SPILL: guardar 'c' en el marco de pila</span></div>
+          </div>
+        </div>
       </div>
     </section>
 
     <!-- Navegación entre módulos -->
     <div class="pt-8 border-t border-slate-800 flex items-center justify-between font-mono text-xs">
-      <a href="/modulo/5-codigo-intermedio" class="px-4 py-2 rounded-lg bg-[#0d1527] hover:bg-slate-900 text-slate-400 hover:text-white transition">
+      <a href="/modulo/5-codigo-intermedio" class="px-4 py-2.5 rounded-xl bg-[#0d1527] hover:bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition flex items-center gap-1.5">
         ◀ Anterior: Módulo 5 (C3D)
       </a>
-      <a href="/modulo/7-riscv" class="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-600 hover:bg-gradient-to-r from-purple-500 to-indigo-600/80 text-white font-bold transition flex items-center gap-2">
+      <a href="/modulo/7-riscv" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 hover:opacity-90 text-white font-bold transition flex items-center gap-1.5 shadow-[0_0_15px_rgba(168,85,247,0.3)]">
         <span>Siguiente: Módulo 7 (RISC-V)</span>
         <span>▶</span>
       </a>
     </div>
   </div>
 </MainLayout>
-
