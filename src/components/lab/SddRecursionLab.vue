@@ -111,24 +111,6 @@
         </div>
       </div>
 
-      <!-- Gramática Resultante Completa (Sin Recursividad Izquierda - Solución Inmediata) -->
-      <div class="space-y-2">
-        <div class="flex items-center justify-between text-xs font-mono">
-          <span class="text-slate-300 font-bold uppercase tracking-wider flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-            Gramática Resultante Completa (Sin Recursividad Izquierda):
-          </span>
-          <button
-            @click="copyTransformed"
-            class="px-3 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-cyan-300 rounded-lg transition cursor-pointer flex items-center gap-1.5"
-          >
-            <span>📋</span>
-            <span>{{ copySuccess ? '¡Copiado!' : 'Copiar Gramática' }}</span>
-          </button>
-        </div>
-        <pre class="p-4 bg-[#080d1a] border border-slate-800 rounded-2xl font-mono text-sm text-emerald-300 overflow-x-auto shadow-inner leading-relaxed">{{ recursionResult.allTransformedText }}</pre>
-      </div>
-
       <!-- Alerta Teórica Clave del Ing. Mario Ramírez Tobar -->
       <div class="p-4 bg-gradient-to-r from-amber-950/40 to-slate-900/60 border-l-4 border-amber-400 rounded-r-2xl border-y border-r border-amber-500/30 text-xs font-mono space-y-1.5">
         <div class="flex items-center gap-2 text-amber-300 font-bold uppercase tracking-wider">
@@ -233,6 +215,24 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Gramática Completa Transformada -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between text-xs font-mono">
+          <span class="text-slate-300 font-bold uppercase tracking-wider flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            Gramática Resultante Completa (Sin Recursividad Izquierda):
+          </span>
+          <button
+            @click="copyTransformed"
+            class="px-3 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-cyan-300 rounded-lg transition cursor-pointer flex items-center gap-1.5"
+          >
+            <span>📋</span>
+            <span>{{ copySuccess ? '¡Copiado!' : 'Copiar Gramática' }}</span>
+          </button>
+        </div>
+        <pre class="p-4 bg-[#080d1a] border border-slate-800 rounded-2xl font-mono text-sm text-emerald-300 overflow-x-auto shadow-inner leading-relaxed">{{ recursionResult.allTransformedText }}</pre>
       </div>
     </div>
 
@@ -357,18 +357,6 @@
             </div>
           </div>
         </div>
-
-        <!-- Píldora de Criterio: Diferencia entre .val y .sin -->
-        <div class="p-3 bg-[#060a14] rounded-xl border border-cyan-500/30 text-[11px] font-sans flex flex-wrap items-center justify-between gap-2 text-slate-300">
-          <div class="flex items-center gap-2">
-            <span class="text-amber-400 font-bold">💡 Distinción Clave:</span>
-            <span>
-              <strong class="text-emerald-400 font-mono">.val</strong> es la meta semántica final del no-terminal primario (<code>E.val, B.val, T.val</code>).
-              <strong class="text-cyan-400 font-mono ml-2">.sin</strong> es el retorno del acumulador en la cola recursiva (<code>E'.sin, B'.sin</code>) que asciende al llegar a <code class="text-slate-200">ε</code> para entregarlo a <code>E.val = E'.sin</code>.
-            </span>
-          </div>
-          <span class="text-[10px] text-purple-300 font-mono">.her acumula hacia la derecha ➔</span>
-        </div>
       </div>
 
       <!-- Resumen Estadístico y Leyenda de Atributos -->
@@ -449,17 +437,17 @@
             class="transition-all duration-150 select-none mx-auto block"
           >
             <defs>
-              <!-- Flecha para ramas de derivación sintáctica (Padre -> Hijo) -->
+              <!-- Flecha direccional para ramas sintácticas Padre -> Hijo -->
               <marker
                 id="arrow-branch"
                 viewBox="0 0 10 10"
-                refX="8"
+                refX="7"
                 refY="5"
-                markerWidth="6"
-                markerHeight="6"
+                markerWidth="5"
+                markerHeight="5"
                 orient="auto"
               >
-                <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#64748b" />
+                <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569" />
               </marker>
 
               <!-- Flecha para dependencias sintetizadas (Cyan/Emerald) -->
@@ -468,11 +456,11 @@
                 viewBox="0 0 10 10"
                 refX="8"
                 refY="5"
-                markerWidth="7"
-                markerHeight="7"
+                markerWidth="6"
+                markerHeight="6"
                 orient="auto"
               >
-                <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#22d3ee" stroke="#0891b2" stroke-width="0.8" />
+                <path d="M 0 1.5 L 8.5 5 L 0 8.5 z" fill="#22d3ee" />
               </marker>
 
               <!-- Flecha para dependencias heredadas (Purple/Pink) -->
@@ -481,15 +469,15 @@
                 viewBox="0 0 10 10"
                 refX="8"
                 refY="5"
-                markerWidth="7"
-                markerHeight="7"
+                markerWidth="6"
+                markerHeight="6"
                 orient="auto"
               >
-                <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#c084fc" stroke="#7e22ce" stroke-width="0.8" />
+                <path d="M 0 1.5 L 8.5 5 L 0 8.5 z" fill="#c084fc" />
               </marker>
             </defs>
 
-            <!-- 1. RAMAS DEL ÁRBOL SINTÁCTICO (Conectores Padre -> Hijos con Flechas Direccionales) -->
+            <!-- 1. RAMAS DEL ÁRBOL SINTÁCTICO (Conectores Padre -> Hijos) -->
             <g class="tree-branches">
               <template v-for="node in sddTreeData.nodesList" :key="'branches-' + node.id">
                 <line
@@ -499,15 +487,32 @@
                   :y1="computeBranchLine(node, child).y1"
                   :x2="computeBranchLine(node, child).x2"
                   :y2="computeBranchLine(node, child).y2"
-                  stroke="#475569"
-                  stroke-width="1.8"
+                  stroke="#334155"
+                  stroke-width="1.6"
                   stroke-dasharray="3,3"
                   marker-end="url(#arrow-branch)"
                 />
               </template>
             </g>
 
-            <!-- 2. NODOS DEL ÁRBOL SINTÁCTICO (Estacionarios al pasar el mouse, sin desplazamiento) -->
+            <!-- 2. ARISTAS DEL GRAFO DE DEPENDENCIAS ENTRE ATRIBUTOS -->
+            <g v-if="showEdges" class="dependency-edges">
+              <template v-for="edge in visibleEdges" :key="edge.id">
+                <path
+                  :d="computeCurvedPath(edge.from, edge.to)"
+                  :stroke="edge.edgeType === 'inherited' ? '#c084fc' : '#22d3ee'"
+                  :marker-end="edge.edgeType === 'inherited' ? 'url(#arrow-purple)' : 'url(#arrow-cyan)'"
+                  stroke-width="2.2"
+                  fill="none"
+                  stroke-opacity="0.85"
+                  class="transition-all hover:stroke-width-4 hover:stroke-opacity-100"
+                >
+                  <title>{{ edge.ruleDesc }} ({{ edge.from.nodeSym }}#{{ edge.from.nodeId }}.{{ edge.from.attrName }} ➔ {{ edge.to.nodeSym }}#{{ edge.to.nodeId }}.{{ edge.to.attrName }})</title>
+                </path>
+              </template>
+            </g>
+
+            <!-- 3. NODOS DEL ÁRBOL SINTÁCTICO -->
             <g class="tree-nodes">
               <template v-for="node in sddTreeData.nodesList" :key="'node-' + node.id">
                 <!-- Cápsula del nodo sintáctico -->
@@ -515,15 +520,15 @@
                   @click="selectedNode = node"
                   class="cursor-pointer group"
                 >
-                  <!-- Círculo base del símbolo (sin scale-110 para evitar movimiento brusco) -->
+                  <!-- Círculo base del símbolo (estacionario al hacer hover) -->
                   <circle
                     :cx="node.x"
                     :cy="node.y"
                     :r="node.isTerminal ? 16 : 22"
                     :fill="node.isTerminal ? '#0f172a' : '#1e1b4b'"
                     :stroke="selectedNode?.id === node.id ? '#38bdf8' : (node.isTerminal ? '#64748b' : '#818cf8')"
-                    :stroke-width="selectedNode?.id === node.id ? 3.5 : 2"
-                    class="transition-colors duration-150 group-hover:stroke-cyan-300"
+                    :stroke-width="selectedNode?.id === node.id ? 3 : 2"
+                    class="transition-colors duration-150 group-hover:stroke-cyan-300 group-hover:stroke-[3.5px]"
                   />
                   <!-- Texto del símbolo sintáctico -->
                   <text
@@ -555,15 +560,15 @@
               </template>
             </g>
 
-            <!-- 3. PASTILLAS DE ATRIBUTOS ANOTADOS EN CADA NODO -->
+            <!-- 4. PASTILLAS DE ATRIBUTOS ANOTADOS EN CADA NODO -->
             <g class="attribute-badges">
               <template v-for="attr in sddTreeData.attributesList" :key="'attr-' + attr.nodeId + '-' + attr.attrName">
                 <g class="cursor-pointer group">
-                  <!-- Fondo de la píldora de atributo (ancho 74px para que quepa true/false) -->
+                  <!-- Fondo de la píldora de atributo (ancho 76px para máxima holgura y separación) -->
                   <rect
-                    :x="attr.x - 37"
+                    :x="attr.x - 38"
                     :y="attr.y - 10"
-                    width="74"
+                    width="76"
                     height="20"
                     rx="8"
                     :fill="getAttrBadgeFill(attr.attrType)"
@@ -587,136 +592,51 @@
                 </g>
               </template>
             </g>
-
-            <!-- 4. ARISTAS DEL GRAFO DE DEPENDENCIAS ENTRE ATRIBUTOS (CON FLECHAS DIRECCIONALES) -->
-            <g v-if="showEdges" class="dependency-edges">
-              <template v-for="edge in visibleEdges" :key="edge.id">
-                <path
-                  :d="computeCurvedPath(edge.from, edge.to)"
-                  :stroke="edge.edgeType === 'inherited' ? '#c084fc' : '#22d3ee'"
-                  :marker-end="edge.edgeType === 'inherited' ? 'url(#arrow-purple)' : 'url(#arrow-cyan)'"
-                  stroke-width="2.5"
-                  fill="none"
-                  stroke-opacity="0.9"
-                  class="transition-all hover:stroke-width-4 hover:stroke-opacity-100"
-                >
-                  <title>{{ edge.ruleDesc }} ({{ edge.from.nodeSym }}#{{ edge.from.nodeId }}.{{ edge.from.attrName }} ➔ {{ edge.to.nodeSym }}#{{ edge.to.nodeId }}.{{ edge.to.attrName }})</title>
-                </path>
-              </template>
-            </g>
           </svg>
         </div>
       </div>
 
-      <!-- Leyenda de Atributos y Guía de Uso de .val vs .sin vs .her (Ubicada fuera del árbol en la parte inferior) -->
-      <div v-if="sddTreeData" class="space-y-4">
-        <!-- Leyenda Clásica de Tipos de Flujo -->
-        <div class="bg-[#080d1a] p-4 rounded-2xl border border-slate-800 font-mono text-xs space-y-2.5 shadow-lg">
-          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
-            <div class="flex items-center gap-2 text-cyan-300 font-bold">
-              <span class="text-base">🏷️</span>
-              <span class="text-xs uppercase tracking-wider">Leyenda de Tipos de Atributos y Flujo Semántico</span>
-            </div>
-            <span class="text-[11px] text-slate-400">
-              {{ activeTransformedGrammar.title }}
-            </span>
+      <!-- Leyenda de Atributos (Ubicada fuera del árbol en la parte inferior) -->
+      <div v-if="sddTreeData" class="bg-[#080d1a] p-4 rounded-2xl border border-slate-800 font-mono text-xs space-y-2.5 shadow-lg">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-2">
+          <div class="flex items-center gap-2 text-cyan-300 font-bold">
+            <span class="text-base">🏷️</span>
+            <span class="text-xs uppercase tracking-wider">Leyenda de Tipos de Atributos y Flujo Semántico</span>
           </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div class="p-3 bg-purple-950/30 rounded-xl border border-purple-500/40 space-y-1">
-              <div class="flex items-center gap-2 text-purple-300 font-bold">
-                <span class="w-3 h-3 rounded-full bg-purple-400 inline-block shadow-[0_0_8px_rgba(192,132,252,0.8)]"></span>
-                <span>Heredado (.her / .valh)</span>
-              </div>
-              <p class="text-slate-300 text-[11px] leading-relaxed font-sans">
-                <strong>Flujo lateral / descendente:</strong> Las flechas moradas (<span class="text-purple-400 font-bold">➔</span>) indican el paso de valores acumulados hacia la derecha o hacia abajo. Obligatorio al eliminar recursividad izquierda.
-              </p>
-            </div>
-
-            <div class="p-3 bg-emerald-950/30 rounded-xl border border-emerald-500/40 space-y-1">
-              <div class="flex items-center gap-2 text-emerald-300 font-bold">
-                <span class="w-3 h-3 rounded-full bg-emerald-400 inline-block shadow-[0_0_8px_rgba(52,211,153,0.8)]"></span>
-                <span>Sintetizado (.sin / .val / .total)</span>
-              </div>
-              <p class="text-slate-300 text-[11px] leading-relaxed font-sans">
-                <strong>Flujo ascendente:</strong> Las flechas cian (<span class="text-cyan-400 font-bold">➔</span>) indican subida de resultados computados desde los hijos hacia el nodo padre (post-orden) hasta retornar el resultado a la raíz.
-              </p>
-            </div>
-
-            <div class="p-3 bg-amber-950/30 rounded-xl border border-amber-500/40 space-y-1">
-              <div class="flex items-center gap-2 text-amber-300 font-bold">
-                <span class="w-3 h-3 rounded-full bg-amber-400 inline-block shadow-[0_0_8px_rgba(245,158,11,0.8)]"></span>
-                <span>Léxico / Terminal (.valex / .val)</span>
-              </div>
-              <p class="text-slate-300 text-[11px] leading-relaxed font-sans">
-                <strong>Constante literal de token:</strong> Obtenido directamente del escáner léxico (números enteros, identificadores o booleanos <code>true</code> / <code>false</code>).
-              </p>
-            </div>
-          </div>
+          <span class="text-[11px] text-slate-400">
+            {{ activeTransformedGrammar.title }}
+          </span>
         </div>
 
-        <!-- Guía Canónica de Nomenclatura: Cuándo usar .val vs .sin vs .her vs .valex -->
-        <div class="p-4 sm:p-5 bg-[#0a1224] rounded-2xl border border-cyan-500/40 font-mono text-xs space-y-3 shadow-xl">
-          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2">
-            <div class="flex items-center gap-2 font-bold text-cyan-300">
-              <span class="text-base">🎓</span>
-              <span class="text-xs uppercase tracking-wider">Criterio Ramírez Tobar: ¿Cuándo usar .val, .sin, .her o .valex?</span>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="p-3 bg-purple-950/30 rounded-xl border border-purple-500/40 space-y-1">
+            <div class="flex items-center gap-2 text-purple-300 font-bold">
+              <span class="w-3 h-3 rounded-full bg-purple-400 inline-block shadow-[0_0_8px_rgba(192,132,252,0.8)]"></span>
+              <span>Heredado (.her / .valh)</span>
             </div>
-            <span class="text-[11px] text-slate-400">Guía para el Estudiante de Compiladores</span>
+            <p class="text-slate-300 text-[11px] leading-relaxed font-sans">
+              <strong>Flujo lateral / descendente:</strong> Pasa el valor acumulado desde el padre o hermano izquierdo hacia la derecha. Obligatorio al eliminar recursividad izquierda.
+            </p>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs font-sans">
-            <div class="p-3 bg-emerald-950/30 rounded-xl border border-emerald-500/40 space-y-1.5">
-              <div class="flex items-center gap-2 font-mono font-bold text-emerald-300">
-                <span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/40 text-[10px]">↑ SINTETIZADO</span>
-                <span>.val</span>
-              </div>
-              <p class="text-slate-300 text-[11px] leading-relaxed">
-                <strong>¿Cuándo usarlo?</strong> En los no-terminales sintácticos <strong>principales</strong> (<code>E.val, T.val, F.val, B.val, L.val</code>).
-              </p>
-              <p class="text-slate-400 text-[10px] leading-relaxed">
-                <strong>Propósito:</strong> Es la meta final del cálculo. Sube desde los hijos hacia el padre (post-orden) para retornar el resultado semántico evaluado de toda esa regla.
-              </p>
+          <div class="p-3 bg-emerald-950/30 rounded-xl border border-emerald-500/40 space-y-1">
+            <div class="flex items-center gap-2 text-emerald-300 font-bold">
+              <span class="w-3 h-3 rounded-full bg-emerald-400 inline-block shadow-[0_0_8px_rgba(52,211,153,0.8)]"></span>
+              <span>Sintetizado (.sin / .val / .total)</span>
             </div>
+            <p class="text-slate-300 text-[11px] leading-relaxed font-sans">
+              <strong>Flujo ascendente:</strong> Sube el resultado calculado desde los hijos hacia el nodo padre (post-orden) hasta retornar el resultado a la raíz.
+            </p>
+          </div>
 
-            <div class="p-3 bg-cyan-950/30 rounded-xl border border-cyan-500/40 space-y-1.5">
-              <div class="flex items-center gap-2 font-mono font-bold text-cyan-300">
-                <span class="px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/40 text-[10px]">↑ SINTETIZADO</span>
-                <span>.sin</span>
-              </div>
-              <p class="text-slate-300 text-[11px] leading-relaxed">
-                <strong>¿Cuándo usarlo?</strong> <em>Exclusivamente</em> en no-terminales <strong>auxiliares de cola</strong> (<code>E'.sin, T'.sin, B'.sin</code>) creados al eliminar recursividad izquierda.
-              </p>
-              <p class="text-slate-400 text-[10px] leading-relaxed">
-                <strong>¿Por qué no .val?</strong> Porque <code>E'</code> tiene dos flujos opuestos: recibe el acumulador en <code>E'.her</code> y, al llegar a ε (<code>E'.sin = E'.her</code>), <strong>sintetiza hacia arriba</strong> el total acumulado para entregárselo a <code>E.val = E'.sin</code> sin colisión de nombres.
-              </p>
+          <div class="p-3 bg-amber-950/30 rounded-xl border border-amber-500/40 space-y-1">
+            <div class="flex items-center gap-2 text-amber-300 font-bold">
+              <span class="w-3 h-3 rounded-full bg-amber-400 inline-block shadow-[0_0_8px_rgba(245,158,11,0.8)]"></span>
+              <span>Léxico / Terminal (.valex / .val)</span>
             </div>
-
-            <div class="p-3 bg-purple-950/30 rounded-xl border border-purple-500/40 space-y-1.5">
-              <div class="flex items-center gap-2 font-mono font-bold text-purple-300">
-                <span class="px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-500/40 text-[10px]">↓ HEREDADO</span>
-                <span>.her / .valh</span>
-              </div>
-              <p class="text-slate-300 text-[11px] leading-relaxed">
-                <strong>¿Cuándo usarlo?</strong> Cuando un nodo necesita un valor que proviene de su <strong>izquierda</strong> o de su <strong>padre</strong> (contexto o acumulador).
-              </p>
-              <p class="text-slate-400 text-[10px] leading-relaxed">
-                <strong>Ejemplos:</strong> Acumulador de sumas/productos (<code>E'.her, T'.valh</code>) o propagación del tipo de datos en declaraciones (<code>L.her = T.tipo</code>). <em>Nunca puede ser el atributo raíz</em>.
-              </p>
-            </div>
-
-            <div class="p-3 bg-amber-950/30 rounded-xl border border-amber-500/40 space-y-1.5">
-              <div class="flex items-center gap-2 font-mono font-bold text-amber-300">
-                <span class="px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-500/40 text-[10px]">🏷️ LÉXICO</span>
-                <span>.valex / .val</span>
-              </div>
-              <p class="text-slate-300 text-[11px] leading-relaxed">
-                <strong>¿Cuándo usarlo?</strong> En los <strong>símbolos terminales / hojas</strong> del árbol léxico (<code>digito.valex, num.val, true, false</code>).
-              </p>
-              <p class="text-slate-400 text-[10px] leading-relaxed">
-                <strong>Propósito:</strong> No se calcula mediante fórmulas gramaticales; es el valor constante entregado por el escáner del compilador.
-              </p>
-            </div>
+            <p class="text-slate-300 text-[11px] leading-relaxed font-sans">
+              <strong>Constante literal de token:</strong> Obtenido directamente del analizador léxico (números enteros, identificadores o booleanos <code>true</code> / <code>false</code>).
+            </p>
           </div>
         </div>
       </div>
@@ -787,18 +707,6 @@
                 Las reglas se evalúan estrictamente conforme a las aristas dirigidas del Grafo de Dependencias (DAG). Primero se resuelven las hojas léxicas, luego se propagan los atributos heredados hacia la derecha/abajo y finalmente los sintetizados ascienden hacia la raíz.
               </p>
             </div>
-          </div>
-
-          <!-- Píldora de Criterio: Diferencia entre .val y .sin -->
-          <div class="p-3 bg-[#060a14] rounded-xl border border-cyan-500/30 text-[11px] font-sans flex flex-wrap items-center justify-between gap-2 text-slate-300">
-            <div class="flex items-center gap-2">
-              <span class="text-amber-400 font-bold">💡 Distinción Clave:</span>
-              <span>
-                <strong class="text-emerald-400 font-mono">.val</strong> es la meta semántica final del no-terminal primario (<code>E.val, B.val</code>).
-                <strong class="text-cyan-400 font-mono ml-2">.sin</strong> es el retorno del acumulador en la cola recursiva (<code>E'.sin, B'.sin</code>) que asciende al llegar a <code class="text-slate-200">ε</code> para entregarlo a <code>E.val = E'.sin</code>.
-              </span>
-            </div>
-            <span class="text-[10px] text-purple-300 font-mono">.her acumula hacia la derecha ➔</span>
           </div>
         </div>
         <!-- Barra de Reproducción y Control de Pasos -->
@@ -1933,90 +1841,50 @@ F -> ( E ) | id { print(id); } | num { print(num); }</pre>
         </div>
       </div>
 
-      <!-- Guía Canónica de Nomenclatura Formal (Cátedra Mario Ramírez Tobar) -->
-      <div class="p-5 sm:p-6 bg-gradient-to-r from-purple-950/40 via-[#0a1224] to-cyan-950/40 rounded-3xl border border-cyan-500/40 space-y-4 shadow-xl">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-          <div>
-            <div class="text-[10px] font-mono text-cyan-400 font-bold uppercase tracking-wider">Norma y Rigor Formal • Cátedra Mario Ramírez Tobar</div>
-            <h4 class="text-base font-extrabold text-white flex items-center gap-2">
-              <span>🎓</span>
-              <span>Guía Definitiva: ¿Cuándo Usar .val, .sin, .her o .valex?</span>
-            </h4>
+      <!-- Cuadros Comparativos: S-Atribuidas vs L-Atribuidas -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="p-5 bg-[#0a1224] rounded-2xl border border-cyan-500/40 space-y-2">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-cyan-400"></span>
+            <h5 class="font-mono font-bold text-cyan-300 text-sm uppercase">Definiciones S-Atribuidas</h5>
           </div>
-          <span class="text-xs font-mono px-3 py-1 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-500/40 font-bold">
-            Convención Estándar
-          </span>
+          <p class="text-slate-300 leading-relaxed">
+            Contienen <strong>únicamente atributos sintetizados</strong>. El valor de cada atributo se computa exclusivamente a partir de los atributos de sus nodos hijos.
+          </p>
+          <ul class="list-disc pl-5 space-y-1 text-slate-400 font-mono text-[11px]">
+            <li>Orden de recorrido: <em>Post-orden</em> (abajo hacia arriba).</li>
+            <li>Compatibilidad nativa con analizadores ascendentes (LR / LALR).</li>
+            <li>Las acciones se ejecutan justo al momento de la reducción en la pila.</li>
+          </ul>
         </div>
 
-        <p class="text-slate-300 text-xs leading-relaxed font-sans">
-          Uno de los aspectos que más confunde a los estudiantes en el curso de Compiladores es por qué en el libro y diapositivas se alternan nombres de atributos como <code>E.val</code> frente a <code>E'.sin</code> o <code>E'.her</code>. La convención formal del Ing. Mario Ramírez Tobar sigue una separación semántica precisa entre <strong>metas principales</strong> y <strong>acumuladores auxiliares</strong>:
+        <div class="p-5 bg-[#0a1224] rounded-2xl border border-purple-500/40 space-y-2">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-purple-400"></span>
+            <h5 class="font-mono font-bold text-purple-300 text-sm uppercase">Definiciones L-Atribuidas</h5>
+          </div>
+          <p class="text-slate-300 leading-relaxed">
+            Permiten <strong>atributos heredados</strong> además de sintetizados. La regla clave es que un atributo heredado solo puede depender de los atributos de los hermanos situados <em>estrictamente a su izquierda</em> o del encabezado padre.
+          </p>
+          <ul class="list-disc pl-5 space-y-1 text-slate-400 font-mono text-[11px]">
+            <li>Orden de recorrido: <em>Pre-orden</em> y DFS (izquierda a derecha).</li>
+            <li>Compatibilidad nativa con analizadores descendentes (LL(1) y descenso recursivo).</li>
+            <li>Son obligatorias cuando se elimina la recursividad por la izquierda en expresiones.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- ¿Por qué la eliminación de recursividad fuerza el uso de atributos heredados? -->
+      <div class="p-5 bg-[#080d1a] rounded-2xl border border-slate-800 space-y-2">
+        <h5 class="font-mono font-bold text-amber-300 text-sm uppercase">
+          💡 El Vínculo Crucial: ¿Por qué la Eliminación de Recursividad Izquierda Crea Atributos Heredados?
+        </h5>
+        <p class="text-slate-300 leading-relaxed">
+          En la gramática recursiva izquierda original: <code>E → E + T</code> o <code>B → B or T</code>, la asociatividad por la izquierda se resolvía naturalmente de abajo hacia arriba mediante reducciones ascendentes (S-atribuida).
         </p>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-xs">
-          <!-- .val -->
-          <div class="p-4 bg-[#080d1a] rounded-2xl border border-emerald-500/40 space-y-2">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
-              <span class="text-emerald-300 font-bold flex items-center gap-2">
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-                <span>Atributo .val (Valor Sintetizado Principal)</span>
-              </span>
-              <span class="text-[10px] text-emerald-400">↑ Ascendente</span>
-            </div>
-            <ul class="text-slate-300 text-[11px] font-sans space-y-1.5 leading-relaxed">
-              <li><strong>¿Dónde se usa?</strong> En no-terminales primarios del lenguaje: <code>E.val, T.val, F.val, B.val, L.val</code>.</li>
-              <li><strong>Significado conceptual:</strong> Es el resultado semántico final evaluado de toda la construcción gramatical que representa dicho no-terminal.</li>
-              <li><strong>Regla de oro:</strong> Si el nodo es el encabezado de la expresión o factor principal, su resultado evaluado siempre se llama <code>.val</code>.</li>
-            </ul>
-          </div>
-
-          <!-- .sin -->
-          <div class="p-4 bg-[#080d1a] rounded-2xl border border-cyan-500/40 space-y-2">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
-              <span class="text-cyan-300 font-bold flex items-center gap-2">
-                <span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
-                <span>Atributo .sin (Sintetizado de Cola Recursiva)</span>
-              </span>
-              <span class="text-[10px] text-cyan-400">↑ Ascendente</span>
-            </div>
-            <ul class="text-slate-300 text-[11px] font-sans space-y-1.5 leading-relaxed">
-              <li><strong>¿Dónde se usa?</strong> <em>Únicamente</em> en los símbolos auxiliares con prima: <code>E'.sin, T'.sin, B'.sin</code>.</li>
-              <li><strong>¿Por qué no llamarlo .val?</strong> Porque en la cola recursiva entran dos flujos de datos contrarios: el acumulador que baja (<code>E'.her</code>) y el valor que sube (<code>E'.sin</code>). Al llegar al final en ε (<code>E' -> ε => E'.sin = E'.her</code>), <code>.sin</code> asciende el acumulador a la superficie para entregarlo a <code>E.val = E'.sin</code>.</li>
-              <li><strong>Regla de oro:</strong> <code>.sin</code> es el canal de retorno exclusivo de las colas recursivas.</li>
-            </ul>
-          </div>
-
-          <!-- .her / .valh -->
-          <div class="p-4 bg-[#080d1a] rounded-2xl border border-purple-500/40 space-y-2">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
-              <span class="text-purple-300 font-bold flex items-center gap-2">
-                <span class="w-2.5 h-2.5 rounded-full bg-purple-400"></span>
-                <span>Atributo .her / .valh (Heredado / Acumulador)</span>
-              </span>
-              <span class="text-[10px] text-purple-400">↓ Lateral-Descendente</span>
-            </div>
-            <ul class="text-slate-300 text-[11px] font-sans space-y-1.5 leading-relaxed">
-              <li><strong>¿Dónde se usa?</strong> En no-terminales cuyo cómputo depende de lo que ocurrió a su <em>izquierda</em> o en su <em>padre</em>: <code>E'.her, T'.her, B'.her, T'.valh, L.her</code>.</li>
-              <li><strong>Significado conceptual:</strong> Acumula sumas/productos hacia la derecha, o propaga tipos de datos desde <code>T</code> hacia <code>L</code> en declaraciones de variables (<code>L.her = T.tipo</code>).</li>
-              <li><strong>Regla de oro:</strong> Nunca puede usarse en el nodo raíz como resultado final; siempre viaja hacia abajo o hacia la derecha.</li>
-            </ul>
-          </div>
-
-          <!-- .valex -->
-          <div class="p-4 bg-[#080d1a] rounded-2xl border border-amber-500/40 space-y-2">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
-              <span class="text-amber-300 font-bold flex items-center gap-2">
-                <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-                <span>Atributo .valex (Léxico Intrínseco de Token)</span>
-              </span>
-              <span class="text-[10px] text-amber-400">🏷️ Escáner</span>
-            </div>
-            <ul class="text-slate-300 text-[11px] font-sans space-y-1.5 leading-relaxed">
-              <li><strong>¿Dónde se usa?</strong> En las hojas terminales: <code>digito.valex, id.lexema, num.val, true, false</code>.</li>
-              <li><strong>Significado conceptual:</strong> Es un valor atómico que no se calcula mediante reglas semánticas; proviene directamente del archivo de código fuente leído por el analizador léxico.</li>
-              <li><strong>Regla de oro:</strong> Es el punto de partida (hojas) de todas las aristas dirigidas en el DAG.</li>
-            </ul>
-          </div>
-        </div>
+        <p class="text-slate-300 leading-relaxed">
+          Al eliminar la recursividad para permitir análisis descendente determinista (LL), la producción se convierte en <code>B → T B'</code> y <code>B' → or T B'<sub>1</sub> | ε</code>. El primer término evaluado es <code>T</code>, pero el resto de las operaciones se derivan hacia la derecha en la cola recursiva. Para que la evaluación no invierta la asociatividad, el valor acumulado debe pasarse hacia abajo y hacia la derecha: esto da origen de forma obligatoria al <strong>atributo heredado <code>B'.her</code></strong>. Al llegar al final de la expresión (<code>B' → ε</code>), el acumulador se convierte en el <strong>atributo sintetizado <code>B'.sin</code></strong> que regresa el resultado a la raíz.
+        </p>
       </div>
     </div>
   </div>
@@ -2519,58 +2387,64 @@ function formatAttrVal(val: number | boolean | string | undefined): string {
 function computeBranchLine(parent: SddNode, child: SddNode) {
   const dx = child.x - parent.x;
   const dy = child.y - parent.y;
-  const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-  const ux = dx / dist;
-  const uy = dy / dist;
-
-  const parentRadius = parent.isTerminal ? 16 : 22;
-  const childRadius = child.isTerminal ? 16 : 22;
-
+  const dist = Math.hypot(dx, dy);
+  if (dist === 0) return { x1: parent.x, y1: parent.y, x2: child.x, y2: child.y };
+  const rParent = parent.isTerminal ? 16 : 22;
+  const rChild = child.isTerminal ? 16 : 22;
   return {
-    x1: parent.x + ux * parentRadius,
-    y1: parent.y + uy * parentRadius,
-    x2: child.x - ux * (childRadius + 3),
-    y2: child.y - uy * (childRadius + 3)
+    x1: parent.x + (dx / dist) * rParent,
+    y1: parent.y + (dy / dist) * rParent,
+    x2: child.x - (dx / dist) * (rChild + 3),
+    y2: child.y - (dy / dist) * (rChild + 3)
+  };
+}
+
+function rectPerimeterPoint(
+  cx: number,
+  cy: number,
+  halfW: number,
+  halfH: number,
+  dirX: number,
+  dirY: number
+): { x: number; y: number } {
+  const len = Math.hypot(dirX, dirY);
+  if (len < 0.001) return { x: cx, y: cy };
+  const ux = dirX / len;
+  const uy = dirY / len;
+  const scaleX = Math.abs(ux) > 1e-6 ? halfW / Math.abs(ux) : Infinity;
+  const scaleY = Math.abs(uy) > 1e-6 ? halfH / Math.abs(uy) : Infinity;
+  const scale = Math.min(scaleX, scaleY);
+  return {
+    x: cx + ux * scale,
+    y: cy + uy * scale
   };
 }
 
 function computeCurvedPath(from: SddAttributeRef, to: SddAttributeRef): string {
   const dx = to.x - from.x;
   const dy = to.y - from.y;
-  const cx1 = from.x + dx * 0.25;
-  const cy1 = from.y + dy * 0.5 - 25;
-  const cx2 = to.x - dx * 0.25;
-  const cy2 = to.y - dy * 0.5 - 25;
 
-  // Vector de aproximación hacia el badge de destino (to)
-  const vx = to.x - cx2;
-  const vy = to.y - cy2;
-  const distTo = Math.sqrt(vx * vx + vy * vy) || 1;
-  const uxTo = vx / distTo;
-  const uyTo = vy / distTo;
+  let cx1: number, cy1: number, cx2: number, cy2: number;
+  if (from.nodeId === to.nodeId) {
+    // Si están en el mismo nodo (ej. T'.sin = T'.her en regla base epsilon):
+    // La curva hace un arco pronunciado por arriba del círculo (#id y nodo)
+    cx1 = from.x + dx * 0.2;
+    cy1 = from.y - 45;
+    cx2 = to.x - dx * 0.2;
+    cy2 = to.y - 45;
+  } else {
+    // Para nodos distintos:
+    cx1 = from.x + dx * 0.25;
+    cy1 = from.y + dy * 0.3 - 28;
+    cx2 = to.x - dx * 0.25;
+    cy2 = to.y - dy * 0.3 - 28;
+  }
 
-  // El badge mide 74px de ancho (mitad 37) y 20px de alto (mitad 10)
-  const sTo = Math.min(
-    Math.abs(uxTo) > 0.001 ? 38 / Math.abs(uxTo) : 999,
-    Math.abs(uyTo) > 0.001 ? 12 / Math.abs(uyTo) : 999
-  );
-  const endX = to.x - uxTo * (sTo + 3);
-  const endY = to.y - uyTo * (sTo + 3);
+  // Puntos perimetrales de las pastillas rectangulares (ancho 76, alto 20 -> halfW=38, halfH=10)
+  const pStart = rectPerimeterPoint(from.x, from.y, 38, 10, cx1 - from.x, cy1 - from.y);
+  const pEnd = rectPerimeterPoint(to.x, to.y, 40, 12, cx2 - to.x, cy2 - to.y);
 
-  // Vector de salida desde el badge de origen (from)
-  const vfx = cx1 - from.x;
-  const vfy = cy1 - from.y;
-  const distFrom = Math.sqrt(vfx * vfx + vfy * vfy) || 1;
-  const uxFrom = vfx / distFrom;
-  const uyFrom = vfy / distFrom;
-  const sFrom = Math.min(
-    Math.abs(uxFrom) > 0.001 ? 38 / Math.abs(uxFrom) : 999,
-    Math.abs(uyFrom) > 0.001 ? 12 / Math.abs(uyFrom) : 999
-  );
-  const startX = from.x + uxFrom * sFrom;
-  const startY = from.y + uyFrom * sFrom;
-
-  return `M ${startX} ${startY} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${endX} ${endY}`;
+  return `M ${pStart.x.toFixed(1)} ${pStart.y.toFixed(1)} C ${cx1.toFixed(1)} ${cy1.toFixed(1)}, ${cx2.toFixed(1)} ${cy2.toFixed(1)}, ${pEnd.x.toFixed(1)} ${pEnd.y.toFixed(1)}`;
 }
 
 function getAttrBadgeFill(type: 'inherited' | 'synthesized' | 'lexical'): string {

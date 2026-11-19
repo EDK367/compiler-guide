@@ -640,8 +640,8 @@ export function parseArithmeticSdd(expression: string): SddTreeResult {
   evalL(root);
 
   // Layout árbol
-  const minNodeWidth = 110;
-  const levelHeight = 110;
+  const minNodeWidth = 165;
+  const levelHeight = 125;
 
   function computeSubtreeWidth(n: SddNode): number {
     if (!n.children || n.children.length === 0) {
@@ -682,20 +682,20 @@ export function parseArithmeticSdd(expression: string): SddTreeResult {
 
       if (attrName === 'her' || attrName === 'valh') {
         attrType = 'inherited';
-        offsetX = -40;
-        offsetY = -12;
+        offsetX = -68;
+        offsetY = 0;
       } else if (attrName === 'sin' || attrName === 'total') {
         attrType = 'synthesized';
-        offsetX = 40;
-        offsetY = -12;
+        offsetX = 68;
+        offsetY = 0;
       } else if (attrName === 'val') {
-        attrType = 'synthesized';
-        offsetX = 36;
-        offsetY = 16;
+        attrType = n.isTerminal ? 'lexical' : 'synthesized';
+        offsetX = n.isTerminal ? 0 : 65;
+        offsetY = n.isTerminal ? 32 : 0;
       } else if (attrName === 'valex') {
         attrType = 'lexical';
         offsetX = 0;
-        offsetY = 24;
+        offsetY = 32;
       }
 
       const attrRef: SddAttributeRef = {
@@ -745,8 +745,8 @@ export function parseArithmeticSdd(expression: string): SddTreeResult {
     edgesList,
     stepsList,
     finalResult: root.attrs['val'] ?? 0,
-    svgWidth: Math.max(maxX + 120, 900),
-    svgHeight: maxY + 140,
+    svgWidth: Math.max(maxX + 180, 1000),
+    svgHeight: maxY + 150,
     grammarTitle: 'Expresiones Aritméticas (+, *) con Atributos Heredados y Sintetizados (Diap. 31 & 34)',
     grammarType: 'arithmetic',
     expression
@@ -971,8 +971,8 @@ export function parseMultiplicationSdd(expression: string): SddTreeResult {
     [`${tNode.id}.total`]
   );
 
-  const minNodeWidth = 120;
-  const levelHeight = 110;
+  const minNodeWidth = 165;
+  const levelHeight = 125;
 
   function computeSubtreeWidth(n: SddNode): number {
     if (!n.children || n.children.length === 0) {
@@ -1013,16 +1013,16 @@ export function parseMultiplicationSdd(expression: string): SddTreeResult {
 
       if (attrName === 'valh') {
         attrType = 'inherited';
-        offsetX = -40;
-        offsetY = -12;
+        offsetX = -68;
+        offsetY = 0;
       } else if (attrName === 'total') {
         attrType = 'synthesized';
-        offsetX = 40;
-        offsetY = -12;
+        offsetX = 68;
+        offsetY = 0;
       } else if (attrName === 'val') {
         attrType = n.isTerminal ? 'lexical' : 'synthesized';
-        offsetX = 0;
-        offsetY = 20;
+        offsetX = n.isTerminal ? 0 : 65;
+        offsetY = n.isTerminal ? 32 : 0;
       }
 
       const attrRef: SddAttributeRef = {
@@ -1071,8 +1071,8 @@ export function parseMultiplicationSdd(expression: string): SddTreeResult {
     edgesList,
     stepsList,
     finalResult: curValh,
-    svgWidth: Math.max(maxX + 120, 800),
-    svgHeight: maxY + 140,
+    svgWidth: Math.max(maxX + 180, 950),
+    svgHeight: maxY + 150,
     grammarTitle: 'Esquema de Multiplicación con Atributos Heredados valh y Sintetizados total (Diap. 24 & 25)',
     grammarType: 'multiplication',
     expression
@@ -1547,8 +1547,8 @@ export function parseBooleanSdd(expression: string): SddTreeResult {
   evalL(root);
 
   // Layout árbol
-  const minNodeWidth = 115;
-  const levelHeight = 110;
+  const minNodeWidth = 165;
+  const levelHeight = 125;
 
   function computeSubtreeWidth(n: SddNode): number {
     if (!n.children || n.children.length === 0) {
@@ -1589,16 +1589,16 @@ export function parseBooleanSdd(expression: string): SddTreeResult {
 
       if (attrName === 'her') {
         attrType = 'inherited';
-        offsetX = -40;
-        offsetY = -12;
+        offsetX = -68;
+        offsetY = 0;
       } else if (attrName === 'sin') {
         attrType = 'synthesized';
-        offsetX = 40;
-        offsetY = -12;
+        offsetX = 68;
+        offsetY = 0;
       } else if (attrName === 'val') {
         attrType = n.isTerminal ? 'lexical' : 'synthesized';
-        offsetX = n.isTerminal ? 0 : 36;
-        offsetY = n.isTerminal ? 24 : 16;
+        offsetX = n.isTerminal ? 0 : 65;
+        offsetY = n.isTerminal ? 32 : 0;
       }
 
       const attrRef: SddAttributeRef = {
@@ -1648,8 +1648,8 @@ export function parseBooleanSdd(expression: string): SddTreeResult {
     edgesList,
     stepsList,
     finalResult: root.attrs['val'] ?? false,
-    svgWidth: Math.max(maxX + 120, 900),
-    svgHeight: maxY + 140,
+    svgWidth: Math.max(maxX + 180, 1000),
+    svgHeight: maxY + 150,
     grammarTitle: 'Expresiones Booleanas (OR, AND, NOT) con Eliminación de Recursividad Izquierda y DDS L-Atribuida',
     grammarType: 'boolean',
     expression
