@@ -145,6 +145,24 @@ export const EXERCISES: ExerciseItem[] = [
     hint: 'La ambigüedad significa que existe al menos una cadena con más de un árbol de análisis sintáctico válido.',
     explanation: 'Una gramática es ambigua si genera dos o más árboles sintácticos para la misma entrada. En el caso del dangling else, una sentencia como `if C1 then if C2 then S1 else S2` puede asociar el `else` al primer o al segundo `if` a menos que se use una regla de precedencia.'
   },
+  {
+    id: 'ex-7-sdd',
+    moduleNumber: 3,
+    category: 'Análisis Sintáctico',
+    difficulty: 'Avanzado',
+    title: 'Evaluación de Atributos Heredados y Sintetizados en una DDS',
+    description: 'En la Definición Dirigida por la Sintaxis (DDS) de la cátedra de Mario Ramírez Tobar para la producción $E \\to T E\'$, con reglas $E\'.her = T.val$ y $E.val = E\'.sin$, ¿cuál es el rol y dirección del atributo $E\'.her$?',
+    type: 'multiple-choice',
+    options: [
+      { id: 'a', text: 'Es un atributo sintetizado que sube de las hojas hacia la raíz al finalizar el análisis.' },
+      { id: 'b', text: 'Es un atributo heredado que pasa el resultado parcial acumulado hacia el subárbol derecho (hacia abajo y hacia la derecha), resolviendo la asociatividad en gramáticas sin recursividad izquierda.' },
+      { id: 'c', text: 'Es un marcador de reducción para analizadores LR que únicamente almacena constantes léxicas.' },
+      { id: 'd', text: 'Es un atributo dinámico que se calcula en tiempo de ejecución en el Heap.' }
+    ],
+    correctAnswer: 'b',
+    hint: 'Al eliminar la recursividad izquierda E -> E + T, el valor de T debe propagarse hacia la cola recursiva E\'.',
+    explanation: 'Al transformar E -> E + T en E -> T E\', el primer operando T se evalúa primero. Para acumular las sumas sucesivas sin invertir la asociatividad izquierda en un parser LL, el valor T.val se transfiere como atributo heredado E\'.her hacia el subárbol derecho, propagándose hasta la reducción épsilon donde se convierte en sintetizado.'
+  },
 
   // --- MÓDULO 4: ANÁLISIS SEMÁNTICO ---
   {

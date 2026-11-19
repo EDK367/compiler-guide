@@ -157,6 +157,24 @@ import { renderLatex } from '../../utils/katexRenderer';
           <span set:html={renderLatex('E \\to T R')} /><br />
           <span set:html={renderLatex('R \\to + T \\;\\{\\text{print}(+) \\} R \\mid \\varepsilon')} />
         </div>
+
+        <!-- Acceso directo al Laboratorio Interactivo -->
+        <div class="mt-4 p-4 rounded-xl bg-gradient-to-r from-purple-950/60 to-cyan-950/60 border border-cyan-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="space-y-1">
+            <span class="text-xs font-mono font-bold text-cyan-300 uppercase tracking-wider block flex items-center gap-1.5">
+              <span>⚡</span> Laboratorio Interactivo en Vivo
+            </span>
+            <p class="text-xs text-slate-300 font-sans">
+              Pruebe a ingresar cualquier gramática con acciones semánticas y observe su descomposición en componentes α y β en tiempo real.
+            </p>
+          </div>
+          <a
+            href="/laboratorio#recursividad-sdd"
+            class="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold font-mono text-xs whitespace-nowrap transition shadow-sm text-center"
+          >
+            Abrir Eliminador de Recursividad ➔
+          </a>
+        </div>
       </div>
     </section>
 
@@ -367,6 +385,24 @@ import { renderLatex } from '../../utils/katexRenderer';
           <p class="text-slate-400 font-sans">
             Así, en el analizador LR la acción se ejecuta de forma natural cuando el parser reduce mediante la producción vacía de M.
           </p>
+        </div>
+
+        <!-- Banner al Laboratorio de Árboles Anotados y Grafos de Dependencia -->
+        <div class="p-4 rounded-xl bg-gradient-to-r from-cyan-950/60 to-purple-950/60 border border-purple-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="space-y-1">
+            <span class="text-xs font-mono font-bold text-purple-300 uppercase tracking-wider block flex items-center gap-1.5">
+              <span>🌳</span> Simulador de Árboles Anotados & Grafos de Dependencia (DDS)
+            </span>
+            <p class="text-xs text-slate-300 font-sans">
+              Visualice expresiones como <code class="text-cyan-300 font-bold">(3 + 4) * (5 + 6)</code> con evaluación paso a paso de atributos heredados (<code class="text-purple-300">↓ her</code>) y sintetizados (<code class="text-emerald-300">↑ sin</code>) y sus grafos DAG de dependencias.
+            </p>
+          </div>
+          <a
+            href="/laboratorio#recursividad-sdd"
+            class="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-400 hover:to-indigo-500 text-white font-bold font-mono text-xs whitespace-nowrap transition shadow-sm text-center"
+          >
+            Ver Árbol & Grafo DDS ➔
+          </a>
         </div>
       </div>
     </section>
