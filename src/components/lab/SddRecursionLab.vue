@@ -111,6 +111,24 @@
         </div>
       </div>
 
+      <!-- Gramática Resultante Completa (Sin Recursividad Izquierda - Solución Inmediata) -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between text-xs font-mono">
+          <span class="text-slate-300 font-bold uppercase tracking-wider flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            Gramática Resultante Completa (Sin Recursividad Izquierda):
+          </span>
+          <button
+            @click="copyTransformed"
+            class="px-3 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-cyan-300 rounded-lg transition cursor-pointer flex items-center gap-1.5"
+          >
+            <span>📋</span>
+            <span>{{ copySuccess ? '¡Copiado!' : 'Copiar Gramática' }}</span>
+          </button>
+        </div>
+        <pre class="p-4 bg-[#080d1a] border border-slate-800 rounded-2xl font-mono text-sm text-emerald-300 overflow-x-auto shadow-inner leading-relaxed">{{ recursionResult.allTransformedText }}</pre>
+      </div>
+
       <!-- Alerta Teórica Clave del Ing. Mario Ramírez Tobar -->
       <div class="p-4 bg-gradient-to-r from-amber-950/40 to-slate-900/60 border-l-4 border-amber-400 rounded-r-2xl border-y border-r border-amber-500/30 text-xs font-mono space-y-1.5">
         <div class="flex items-center gap-2 text-amber-300 font-bold uppercase tracking-wider">
@@ -215,24 +233,6 @@
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- Gramática Completa Transformada -->
-      <div class="space-y-2">
-        <div class="flex items-center justify-between text-xs font-mono">
-          <span class="text-slate-300 font-bold uppercase tracking-wider flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-            Gramática Resultante Completa (Sin Recursividad Izquierda):
-          </span>
-          <button
-            @click="copyTransformed"
-            class="px-3 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-cyan-300 rounded-lg transition cursor-pointer flex items-center gap-1.5"
-          >
-            <span>📋</span>
-            <span>{{ copySuccess ? '¡Copiado!' : 'Copiar Gramática' }}</span>
-          </button>
-        </div>
-        <pre class="p-4 bg-[#080d1a] border border-slate-800 rounded-2xl font-mono text-sm text-emerald-300 overflow-x-auto shadow-inner leading-relaxed">{{ recursionResult.allTransformedText }}</pre>
       </div>
     </div>
 
