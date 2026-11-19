@@ -163,6 +163,24 @@ export const EXERCISES: ExerciseItem[] = [
     hint: 'Al eliminar la recursividad izquierda E -> E + T, el valor de T debe propagarse hacia la cola recursiva E\'.',
     explanation: 'Al transformar E -> E + T en E -> T E\', el primer operando T se evalúa primero. Para acumular las sumas sucesivas sin invertir la asociatividad izquierda en un parser LL, el valor T.val se transfiere como atributo heredado E\'.her hacia el subárbol derecho, propagándose hasta la reducción épsilon donde se convierte en sintetizado.'
   },
+  {
+    id: 'ex-7-bool-sdd',
+    moduleNumber: 3,
+    category: 'Análisis Sintáctico',
+    difficulty: 'Intermedio',
+    title: 'Eliminación de Recursividad Izquierda en Expresiones Booleanas',
+    description: 'Dada la gramática booleana con recursividad izquierda $B \\to B \\text{ or } T \\mid T$, al aplicar la transformación canónica $A \\to \\beta R, R \\to \\alpha R \\mid \\varepsilon$, ¿cuál es la producción generada para el no-terminal auxiliar $B\'$?',
+    type: 'multiple-choice',
+    options: [
+      { id: 'a', text: "B' -> or T B' | epsilon" },
+      { id: 'b', text: "B' -> T or B' | epsilon" },
+      { id: 'c', text: "B' -> B or T | epsilon" },
+      { id: 'd', text: "B' -> not T B'" }
+    ],
+    correctAnswer: 'a',
+    hint: 'Identifique el sufijo que sigue a B en la producción recursiva: alpha = or T.',
+    explanation: 'En B -> B or T | T, el componente recursivo es alpha = or T y la base no recursiva es beta = T. Por ende, B se sustituye por B -> T B\' y el nuevo no terminal auxiliar genera B\' -> or T B\' | epsilon.'
+  },
 
   // --- MÓDULO 4: ANÁLISIS SEMÁNTICO ---
   {

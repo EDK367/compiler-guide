@@ -159,7 +159,7 @@ export interface SddNode {
   sym: string;
   isTerminal?: boolean;
   children: SddNode[];
-  attrs: Record<string, number>;
+  attrs: Record<string, number | boolean | string>;
   // Coordenadas calculadas para el renderizado SVG
   x: number;
   y: number;
@@ -171,7 +171,7 @@ export interface SddAttributeRef {
   nodeSym: string;
   attrName: string;
   attrType: 'inherited' | 'synthesized' | 'lexical';
-  value: number;
+  value: number | boolean | string;
   x: number;
   y: number;
 }
@@ -190,7 +190,7 @@ export interface EvaluationStep {
   targetSym: string;
   targetAttr: string;
   attrType: 'inherited' | 'synthesized' | 'lexical';
-  value: number;
+  value: number | boolean | string;
   ruleTitle: string;
   ruleFormula: string;
   calculationStr: string;
@@ -203,33 +203,52 @@ export interface SddTreeResult {
   attributesList: SddAttributeRef[];
   edgesList: DependencyEdge[];
   stepsList: EvaluationStep[];
-  finalResult: number;
+  finalResult: number | boolean | string;
   svgWidth: number;
   svgHeight: number;
   grammarTitle: string;
+  grammarType: 'arithmetic' | 'multiplication' | 'boolean';
   expression: string;
+}
+
+/**
+ * Detecta automáticamente si una expresión es de tipo boolean, multiplicación o aritmética estándar.
+ */
+export function detectGrammarType(expr: string): 'arithmetic' | 'multiplication' | 'boolean' {
+  const lower = expr.toLowerCase();
+  if (
+    lower.includes('and') ||
+    lower.includes('or') ||
+    lower.includes('not') ||
+    lower.includes('true') ||
+    lower.includes('false') ||
+    lower.includes('&&') ||
+    lower.includes('||') ||
+    lower.includes('!')
+  ) {
+    return 'boolean';
+  }
+  if (lower.includes('+') || lower.includes('(') || lower.includes(')')) {
+    return 'arithmetic';
+  }
+  if (lower.includes('*') && !lower.includes('+')) {
+    return 'multiplication';
+  }
+  return 'arithmetic';
 }
 
 // -------------------------------------------------------------
 // GRAMÁTICA 1: ARITMÉTICA (+, *) SIN RECURSIVIDAD IZQUIERDA
 // Basada en diapositivas 31 y 34 de Mario Ramírez Tobar
-// L -> E
-// E -> T E'      { E'.her = T.val; E.val = E'.sin }
-// E' -> + T E'1  { E'1.her = E'.her + T.val; E'.sin = E'1.sin }
-// E' -> ε        { E'.sin = E'.her }
-// T -> F T'      { T'.her = F.val; T.val = T'.sin }
-// T' -> * F T'1  { T'1.her = T'.her * F.val; T'.sin = T'1.sin }
-// T' -> ε        { T'.sin = T'.her }
-// F -> ( E )     { F.val = E.val }
-// F -> digito    { F.val = digito.valex }
 // -------------------------------------------------------------
 
 interface Token {
   type: string;
   val?: number;
+  boolVal?: boolean;
 }
 
-function tokenize(input: string): Token[] {
+function tokenizeArithmetic(input: string): Token[] {
   const tokens: Token[] = [];
   let i = 0;
   while (i < input.length) {
@@ -247,7 +266,7 @@ function tokenize(input: string): Token[] {
       tokens.push({ type: c });
       i++;
     } else {
-      i++; // Omitir caracteres no soportados limpiamente
+      i++;
     }
   }
   tokens.push({ type: 'EOF' });
@@ -255,7 +274,7 @@ function tokenize(input: string): Token[] {
 }
 
 export function parseArithmeticSdd(expression: string): SddTreeResult {
-  const tokens = tokenize(expression);
+  const tokens = tokenizeArithmetic(expression);
   let tokenIdx = 0;
   let nodeCounter = 0;
 
@@ -361,9 +380,7 @@ export function parseArithmeticSdd(expression: string): SddTreeResult {
 
   const root = parseL();
 
-  // -------------------------------------------------------------
-  // EVALUACIÓN DE ATRIBUTOS, DEPENDENCIAS Y TRAZABILIDAD
-  // -------------------------------------------------------------
+  // Recolectar nodos
   const nodesList: SddNode[] = [];
   function collectNodes(n: SddNode) {
     nodesList.push(n);
@@ -402,8 +419,7 @@ export function parseArithmeticSdd(expression: string): SddTreeResult {
   function evalF(node: SddNode) {
     if (node.children.length === 1 && node.children[0].sym === 'digito') {
       const dig = node.children[0];
-      const valex = dig.attrs['valex'];
-      // Registrar atributo léxico
+      const valex = Number(dig.attrs['valex'] || 0);
       addStep(
         dig,
         'valex',
@@ -415,7 +431,6 @@ export function parseArithmeticSdd(expression: string): SddTreeResult {
         []
       );
 
-      // F.val = digito.valex
       addStep(
         node,
         'val',
@@ -429,7 +444,7 @@ export function parseArithmeticSdd(expression: string): SddTreeResult {
     } else if (node.children.length === 3 && node.children[0].sym === '(') {
       const eNode = node.children[1];
       evalE(eNode);
-      const val = eNode.attrs['val'];
+      const val = Number(eNode.attrs['val'] || 0);
       addStep(
         node,
         'val',
@@ -449,11 +464,10 @@ export function parseArithmeticSdd(expression: string): SddTreeResult {
       const tp1Node = node.children[2];
       evalF(fNode);
 
-      const fVal = fNode.attrs['val'];
-      const herVal = node.attrs['her'];
+      const fVal = Number(fNode.attrs['val'] || 0);
+      const herVal = Number(node.attrs['her'] || 0);
       const newHer = herVal * fVal;
 
-      // T'1.her = T'.her * F.val
       addStep(
         tp1Node,
         'her',
@@ -466,9 +480,8 @@ export function parseArithmeticSdd(expression: string): SddTreeResult {
       );
 
       evalTp(tp1Node);
-      const sinVal = tp1Node.attrs['sin'];
+      const sinVal = Number(tp1Node.attrs['sin'] || 0);
 
-      // T'.sin = T'1.sin
       addStep(
         node,
         'sin',
@@ -480,8 +493,7 @@ export function parseArithmeticSdd(expression: string): SddTreeResult {
         [`${tp1Node.id}.sin`]
       );
     } else if (node.children.length === 1 && node.children[0].sym === 'ε') {
-      const herVal = node.attrs['her'];
-      // T'.sin = T'.her
+      const herVal = Number(node.attrs['her'] || 0);
       addStep(
         node,
         'sin',
@@ -500,29 +512,27 @@ export function parseArithmeticSdd(expression: string): SddTreeResult {
     const tpNode = node.children[1];
     evalF(fNode);
 
-    const fVal = fNode.attrs['val'];
-    // T'.her = F.val
+    const fVal = Number(fNode.attrs['val'] || 0);
     addStep(
       tpNode,
       'her',
       'inherited',
       fVal,
-      'T -> F T\'',
+      "T -> F T'",
       "T'.her = F.val",
       `T'.her = ${fVal}`,
       [`${fNode.id}.val`]
     );
 
     evalTp(tpNode);
-    const sinVal = tpNode.attrs['sin'];
+    const sinVal = Number(tpNode.attrs['sin'] || 0);
 
-    // T.val = T'.sin
     addStep(
       node,
       'val',
       'synthesized',
       sinVal,
-      'T -> F T\'',
+      "T -> F T'",
       "T.val = T'.sin",
       `T.val = T'.sin = ${sinVal}`,
       [`${tpNode.id}.sin`]
@@ -535,11 +545,10 @@ export function parseArithmeticSdd(expression: string): SddTreeResult {
       const ep1Node = node.children[2];
       evalT(tNode);
 
-      const tVal = tNode.attrs['val'];
-      const herVal = node.attrs['her'];
+      const tVal = Number(tNode.attrs['val'] || 0);
+      const herVal = Number(node.attrs['her'] || 0);
       const newHer = herVal + tVal;
 
-      // E'1.her = E'.her + T.val
       addStep(
         ep1Node,
         'her',
@@ -552,9 +561,8 @@ export function parseArithmeticSdd(expression: string): SddTreeResult {
       );
 
       evalEp(ep1Node);
-      const sinVal = ep1Node.attrs['sin'];
+      const sinVal = Number(ep1Node.attrs['sin'] || 0);
 
-      // E'.sin = E'1.sin
       addStep(
         node,
         'sin',
@@ -566,8 +574,7 @@ export function parseArithmeticSdd(expression: string): SddTreeResult {
         [`${ep1Node.id}.sin`]
       );
     } else if (node.children.length === 1 && node.children[0].sym === 'ε') {
-      const herVal = node.attrs['her'];
-      // E'.sin = E'.her
+      const herVal = Number(node.attrs['her'] || 0);
       addStep(
         node,
         'sin',
@@ -586,8 +593,7 @@ export function parseArithmeticSdd(expression: string): SddTreeResult {
     const epNode = node.children[1];
     evalT(tNode);
 
-    const tVal = tNode.attrs['val'];
-    // E'.her = T.val
+    const tVal = Number(tNode.attrs['val'] || 0);
     addStep(
       epNode,
       'her',
@@ -600,9 +606,8 @@ export function parseArithmeticSdd(expression: string): SddTreeResult {
     );
 
     evalEp(epNode);
-    const sinVal = epNode.attrs['sin'];
+    const sinVal = Number(epNode.attrs['sin'] || 0);
 
-    // E.val = E'.sin
     addStep(
       node,
       'val',
@@ -618,9 +623,8 @@ export function parseArithmeticSdd(expression: string): SddTreeResult {
   function evalL(node: SddNode) {
     const eNode = node.children[0];
     evalE(eNode);
-    const eVal = eNode.attrs['val'];
+    const eVal = Number(eNode.attrs['val'] || 0);
 
-    // L.val = E.val
     addStep(
       node,
       'val',
@@ -635,9 +639,7 @@ export function parseArithmeticSdd(expression: string): SddTreeResult {
 
   evalL(root);
 
-  // -------------------------------------------------------------
-  // CÁLCULO DE COORDENADAS PARA RENDERIZADO VISUAL
-  // -------------------------------------------------------------
+  // Layout árbol
   const minNodeWidth = 110;
   const levelHeight = 110;
 
@@ -650,7 +652,6 @@ export function parseArithmeticSdd(expression: string): SddTreeResult {
     n.width = Math.max(sumW, minNodeWidth);
     return n.width;
   }
-
   computeSubtreeWidth(root);
 
   function layoutTree(n: SddNode, left: number, depth: number) {
@@ -668,10 +669,8 @@ export function parseArithmeticSdd(expression: string): SddTreeResult {
     }
     n.x = (n.children[0].x + n.children[n.children.length - 1].x) / 2;
   }
-
   layoutTree(root, 40, 0);
 
-  // Generar lista de atributos con sus coordenadas absolutas
   const attributesList: SddAttributeRef[] = [];
   const attrMap: Map<string, SddAttributeRef> = new Map();
 
@@ -714,7 +713,6 @@ export function parseArithmeticSdd(expression: string): SddTreeResult {
     }
   }
 
-  // Generar lista de aristas dirigidas (Grafo de Dependencias)
   for (const step of stepsList) {
     const toRef = attrMap.get(`${step.targetNodeId}.${step.targetAttr}`);
     if (!toRef) continue;
@@ -750,6 +748,7 @@ export function parseArithmeticSdd(expression: string): SddTreeResult {
     svgWidth: Math.max(maxX + 120, 900),
     svgHeight: maxY + 140,
     grammarTitle: 'Expresiones Aritméticas (+, *) con Atributos Heredados y Sintetizados (Diap. 31 & 34)',
+    grammarType: 'arithmetic',
     expression
   };
 }
@@ -757,15 +756,10 @@ export function parseArithmeticSdd(expression: string): SddTreeResult {
 // -------------------------------------------------------------
 // GRAMÁTICA 2: MULTIPLICACIÓN PURA CON ATRIBUTOS HEREDADOS
 // Basada en diapositivas 24 y 25 de Mario Ramírez Tobar
-// S -> T          { imprimir(T.total) }
-// T -> F T'       { T'.valh = F.val; T.total = T'.total }
-// T' -> * F T'1   { T'1.valh = T'.valh * F.val; T'.total = T'1.total }
-// T' -> λ         { T'.total = T'.valh }
-// F -> num        { F.val = num.val }
 // -------------------------------------------------------------
 
 export function parseMultiplicationSdd(expression: string): SddTreeResult {
-  const tokens = tokenize(expression).filter(t => t.type === 'NUM' || t.type === '*');
+  const tokens = tokenizeArithmetic(expression).filter(t => t.type === 'NUM' || t.type === '*');
   const nums = tokens.filter(t => t.type === 'NUM').map(t => t.val || 1);
 
   let nodeCounter = 0;
@@ -789,7 +783,6 @@ export function parseMultiplicationSdd(expression: string): SddTreeResult {
 
   if (nums.length === 0) nums.push(1);
 
-  // Construir árbol
   const firstF = createNode('F');
   const firstNum = createNode('num', true);
   firstNum.attrs['val'] = nums[0];
@@ -814,12 +807,10 @@ export function parseMultiplicationSdd(expression: string): SddTreeResult {
     curTp = nextTp;
   }
 
-  // Base λ
   const lambdaNode = createNode('λ', true);
   curTp.children.push(lambdaNode);
   tpChain.push({ tpNode: curTp });
 
-  // Recolectar nodos
   const nodesList: SddNode[] = [];
   function collect(n: SddNode) {
     nodesList.push(n);
@@ -855,7 +846,6 @@ export function parseMultiplicationSdd(expression: string): SddTreeResult {
     });
   }
 
-  // 1. F.val para el primer término
   addStep(
     firstNum,
     'val',
@@ -877,20 +867,18 @@ export function parseMultiplicationSdd(expression: string): SddTreeResult {
     [`${firstNum.id}.val`]
   );
 
-  // 2. T'.valh inicial = F.val
   const topTp = tNode.children[1];
   addStep(
     topTp,
     'valh',
     'inherited',
     nums[0],
-    'T -> F T\'',
+    "T -> F T'",
     "T'.valh = F.val",
     `T'.valh = ${nums[0]}`,
     [`${firstF.id}.val`]
   );
 
-  // 3. Cadena de multiplicación heredada
   let curValh = nums[0];
   for (let i = 0; i < tpChain.length - 1; i++) {
     const item = tpChain[i];
@@ -934,7 +922,6 @@ export function parseMultiplicationSdd(expression: string): SddTreeResult {
     curValh = nextValh;
   }
 
-  // 4. Caso base lambda: T'.total = T'.valh
   const lastTp = tpChain[tpChain.length - 1].tpNode;
   addStep(
     lastTp,
@@ -947,7 +934,6 @@ export function parseMultiplicationSdd(expression: string): SddTreeResult {
     [`${lastTp.id}.valh`]
   );
 
-  // 5. Propagación sintetizada hacia arriba: T'.total = T'1.total
   for (let i = tpChain.length - 2; i >= 0; i--) {
     const parentTp = tpChain[i].tpNode;
     const childTp = parentTp.children[2];
@@ -963,19 +949,17 @@ export function parseMultiplicationSdd(expression: string): SddTreeResult {
     );
   }
 
-  // 6. T.total = T'.total
   addStep(
     tNode,
     'total',
     'synthesized',
     curValh,
-    'T -> F T\'',
+    "T -> F T'",
     "T.total = T'.total",
     `T.total = ${curValh}`,
     [`${topTp.id}.total`]
   );
 
-  // 7. S -> Imprimir(T.total)
   addStep(
     root,
     'total',
@@ -987,7 +971,6 @@ export function parseMultiplicationSdd(expression: string): SddTreeResult {
     [`${tNode.id}.total`]
   );
 
-  // Layout árbol
   const minNodeWidth = 120;
   const levelHeight = 110;
 
@@ -1091,7 +1074,584 @@ export function parseMultiplicationSdd(expression: string): SddTreeResult {
     svgWidth: Math.max(maxX + 120, 800),
     svgHeight: maxY + 140,
     grammarTitle: 'Esquema de Multiplicación con Atributos Heredados valh y Sintetizados total (Diap. 24 & 25)',
+    grammarType: 'multiplication',
     expression
   };
 }
 
+// -------------------------------------------------------------
+// GRAMÁTICA 3: EXPRESIONES BOOLEANAS (OR, AND, NOT, TRUE, FALSE)
+// Con eliminación de recursividad por la izquierda y DDS L-Atribuida
+//
+// Gramática original con recursividad izquierda:
+// B -> B or T | T
+// T -> T and F | F
+// F -> not F | ( B ) | true | false
+//
+// Gramática transformada sin recursividad izquierda (LL):
+// L -> B          { L.val = B.val }
+// B -> T B'       { B'.her = T.val; B.val = B'.sin }
+// B' -> or T B'1  { B'1.her = B'.her or T.val; B'.sin = B'1.sin }
+// B' -> ε         { B'.sin = B'.her }
+// T -> F T'       { T'.her = F.val; T.val = T'.sin }
+// T' -> and F T'1 { T'1.her = T'.her and F.val; T'.sin = T'1.sin }
+// T' -> ε         { T'.sin = T'.her }
+// F -> not F1     { F.val = not F1.val }
+// F -> ( B )      { F.val = B.val }
+// F -> true       { F.val = true }
+// F -> false      { F.val = false }
+// -------------------------------------------------------------
+
+interface BoolToken {
+  type: 'OR' | 'AND' | 'NOT' | 'TRUE' | 'FALSE' | '(' | ')' | 'EOF';
+  raw: string;
+  boolVal?: boolean;
+}
+
+function tokenizeBoolean(input: string): BoolToken[] {
+  const tokens: BoolToken[] = [];
+  let i = 0;
+  while (i < input.length) {
+    const c = input[i];
+    if (/\s/.test(c)) {
+      i++;
+    } else if (input.slice(i, i + 2) === '||') {
+      tokens.push({ type: 'OR', raw: '||' });
+      i += 2;
+    } else if (input.slice(i, i + 2) === '&&') {
+      tokens.push({ type: 'AND', raw: '&&' });
+      i += 2;
+    } else if (c === '!') {
+      tokens.push({ type: 'NOT', raw: '!' });
+      i++;
+    } else if (c === '(' || c === ')') {
+      tokens.push({ type: c, raw: c });
+      i++;
+    } else if (/[a-zA-Z_]/.test(c)) {
+      let word = '';
+      while (i < input.length && /[a-zA-Z0-9_]/.test(input[i])) {
+        word += input[i];
+        i++;
+      }
+      const lower = word.toLowerCase();
+      if (lower === 'or') {
+        tokens.push({ type: 'OR', raw: word });
+      } else if (lower === 'and') {
+        tokens.push({ type: 'AND', raw: word });
+      } else if (lower === 'not') {
+        tokens.push({ type: 'NOT', raw: word });
+      } else if (lower === 'true' || lower === '1') {
+        tokens.push({ type: 'TRUE', raw: word, boolVal: true });
+      } else if (lower === 'false' || lower === '0') {
+        tokens.push({ type: 'FALSE', raw: word, boolVal: false });
+      } else {
+        // En caso de identificador no reconocido, tratar como false o error
+        throw new Error(`Identificador o token no reconocido en expresión booleana: '${word}'`);
+      }
+    } else {
+      i++;
+    }
+  }
+  tokens.push({ type: 'EOF', raw: '$' });
+  return tokens;
+}
+
+export function parseBooleanSdd(expression: string): SddTreeResult {
+  const tokens = tokenizeBoolean(expression);
+  let tokenIdx = 0;
+  let nodeCounter = 0;
+
+  function peek(): BoolToken {
+    return tokens[tokenIdx];
+  }
+
+  function consume(expected?: string): BoolToken {
+    const tok = tokens[tokenIdx];
+    if (expected && tok.type !== expected) {
+      throw new Error(`Se esperaba token '${expected}' pero se encontró '${tok.type}'`);
+    }
+    tokenIdx++;
+    return tok;
+  }
+
+  function createNode(sym: string, isTerminal = false): SddNode {
+    nodeCounter++;
+    return {
+      id: nodeCounter,
+      sym,
+      isTerminal,
+      children: [],
+      attrs: {},
+      x: 0,
+      y: 0,
+      width: 0
+    };
+  }
+
+  function parseL(): SddNode {
+    const node = createNode('L');
+    const bNode = parseB();
+    node.children.push(bNode);
+    return node;
+  }
+
+  function parseB(): SddNode {
+    const node = createNode('B');
+    const tNode = parseT();
+    const bpNode = parseBp();
+    node.children.push(tNode, bpNode);
+    return node;
+  }
+
+  function parseBp(): SddNode {
+    const node = createNode("B'");
+    if (peek().type === 'OR') {
+      const orTok = consume('OR');
+      const orNode = createNode('or', true);
+      const tNode = parseT();
+      const bp1Node = parseBp();
+      node.children.push(orNode, tNode, bp1Node);
+    } else {
+      const epsNode = createNode('ε', true);
+      node.children.push(epsNode);
+    }
+    return node;
+  }
+
+  function parseT(): SddNode {
+    const node = createNode('T');
+    const fNode = parseF();
+    const tpNode = parseTp();
+    node.children.push(fNode, tpNode);
+    return node;
+  }
+
+  function parseTp(): SddNode {
+    const node = createNode("T'");
+    if (peek().type === 'AND') {
+      const andTok = consume('AND');
+      const andNode = createNode('and', true);
+      const fNode = parseF();
+      const tp1Node = parseTp();
+      node.children.push(andNode, fNode, tp1Node);
+    } else {
+      const epsNode = createNode('ε', true);
+      node.children.push(epsNode);
+    }
+    return node;
+  }
+
+  function parseF(): SddNode {
+    const node = createNode('F');
+    if (peek().type === 'NOT') {
+      const notTok = consume('NOT');
+      const notNode = createNode('not', true);
+      const f1Node = parseF();
+      node.children.push(notNode, f1Node);
+    } else if (peek().type === '(') {
+      const lpar = createNode('(', true);
+      consume('(');
+      const bNode = parseB();
+      const rpar = createNode(')', true);
+      consume(')');
+      node.children.push(lpar, bNode, rpar);
+    } else if (peek().type === 'TRUE') {
+      consume('TRUE');
+      const trueNode = createNode('true', true);
+      trueNode.attrs['val'] = true;
+      node.children.push(trueNode);
+    } else if (peek().type === 'FALSE') {
+      consume('FALSE');
+      const falseNode = createNode('false', true);
+      falseNode.attrs['val'] = false;
+      node.children.push(falseNode);
+    } else {
+      throw new Error(`Token booleano inesperado en F: '${peek().type}'`);
+    }
+    return node;
+  }
+
+  const root = parseL();
+
+  // Recolectar nodos
+  const nodesList: SddNode[] = [];
+  function collect(n: SddNode) {
+    nodesList.push(n);
+    for (const c of n.children) collect(c);
+  }
+  collect(root);
+
+  const stepsList: EvaluationStep[] = [];
+  const edgesList: DependencyEdge[] = [];
+
+  function addStep(
+    targetNode: SddNode,
+    targetAttr: string,
+    attrType: 'inherited' | 'synthesized' | 'lexical',
+    value: boolean,
+    ruleTitle: string,
+    ruleFormula: string,
+    calcStr: string,
+    depKeys: string[]
+  ) {
+    targetNode.attrs[targetAttr] = value;
+    stepsList.push({
+      stepNumber: stepsList.length + 1,
+      targetNodeId: targetNode.id,
+      targetSym: targetNode.sym,
+      targetAttr,
+      attrType,
+      value,
+      ruleTitle,
+      ruleFormula,
+      calculationStr: calcStr,
+      dependencies: depKeys
+    });
+  }
+
+  function evalF(node: SddNode) {
+    if (node.children.length === 1 && (node.children[0].sym === 'true' || node.children[0].sym === 'false')) {
+      const leaf = node.children[0];
+      const val = Boolean(leaf.attrs['val']);
+      addStep(
+        leaf,
+        'val',
+        'lexical',
+        val,
+        'Token Booleano',
+        `${leaf.sym}.val`,
+        `Constante = ${val}`,
+        []
+      );
+      addStep(
+        node,
+        'val',
+        'synthesized',
+        val,
+        `F -> ${leaf.sym}`,
+        `F.val = ${leaf.sym}.val`,
+        `F.val = ${val}`,
+        [`${leaf.id}.val`]
+      );
+    } else if (node.children.length === 2 && node.children[0].sym === 'not') {
+      const f1Node = node.children[1];
+      evalF(f1Node);
+      const f1Val = Boolean(f1Node.attrs['val']);
+      const val = !f1Val;
+      addStep(
+        node,
+        'val',
+        'synthesized',
+        val,
+        'F -> not F1',
+        'F.val = not F1.val',
+        `F.val = not (${f1Val}) = ${val}`,
+        [`${f1Node.id}.val`]
+      );
+    } else if (node.children.length === 3 && node.children[0].sym === '(') {
+      const bNode = node.children[1];
+      evalB(bNode);
+      const bVal = Boolean(bNode.attrs['val']);
+      addStep(
+        node,
+        'val',
+        'synthesized',
+        bVal,
+        'F -> ( B )',
+        'F.val = B.val',
+        `F.val = B.val = ${bVal}`,
+        [`${bNode.id}.val`]
+      );
+    }
+  }
+
+  function evalTp(node: SddNode) {
+    if (node.children.length === 3 && node.children[0].sym === 'and') {
+      const fNode = node.children[1];
+      const tp1Node = node.children[2];
+      evalF(fNode);
+
+      const fVal = Boolean(fNode.attrs['val']);
+      const herVal = Boolean(node.attrs['her']);
+      const newHer = herVal && fVal;
+
+      addStep(
+        tp1Node,
+        'her',
+        'inherited',
+        newHer,
+        "T' -> and F T'1",
+        "T'1.her = T'.her and F.val",
+        `T'1.her = ${herVal} and ${fVal} = ${newHer}`,
+        [`${node.id}.her`, `${fNode.id}.val`]
+      );
+
+      evalTp(tp1Node);
+      const sinVal = Boolean(tp1Node.attrs['sin']);
+
+      addStep(
+        node,
+        'sin',
+        'synthesized',
+        sinVal,
+        "T' -> and F T'1",
+        "T'.sin = T'1.sin",
+        `T'.sin = T'1.sin = ${sinVal}`,
+        [`${tp1Node.id}.sin`]
+      );
+    } else if (node.children.length === 1 && node.children[0].sym === 'ε') {
+      const herVal = Boolean(node.attrs['her']);
+      addStep(
+        node,
+        'sin',
+        'synthesized',
+        herVal,
+        "T' -> ε",
+        "T'.sin = T'.her",
+        `T'.sin = T'.her = ${herVal}`,
+        [`${node.id}.her`]
+      );
+    }
+  }
+
+  function evalT(node: SddNode) {
+    const fNode = node.children[0];
+    const tpNode = node.children[1];
+    evalF(fNode);
+
+    const fVal = Boolean(fNode.attrs['val']);
+    addStep(
+      tpNode,
+      'her',
+      'inherited',
+      fVal,
+      "T -> F T'",
+      "T'.her = F.val",
+      `T'.her = ${fVal}`,
+      [`${fNode.id}.val`]
+    );
+
+    evalTp(tpNode);
+    const sinVal = Boolean(tpNode.attrs['sin']);
+
+    addStep(
+      node,
+      'val',
+      'synthesized',
+      sinVal,
+      "T -> F T'",
+      "T.val = T'.sin",
+      `T.val = T'.sin = ${sinVal}`,
+      [`${tpNode.id}.sin`]
+    );
+  }
+
+  function evalBp(node: SddNode) {
+    if (node.children.length === 3 && node.children[0].sym === 'or') {
+      const tNode = node.children[1];
+      const bp1Node = node.children[2];
+      evalT(tNode);
+
+      const tVal = Boolean(tNode.attrs['val']);
+      const herVal = Boolean(node.attrs['her']);
+      const newHer = herVal || tVal;
+
+      addStep(
+        bp1Node,
+        'her',
+        'inherited',
+        newHer,
+        "B' -> or T B'1",
+        "B'1.her = B'.her or T.val",
+        `B'1.her = ${herVal} or ${tVal} = ${newHer}`,
+        [`${node.id}.her`, `${tNode.id}.val`]
+      );
+
+      evalBp(bp1Node);
+      const sinVal = Boolean(bp1Node.attrs['sin']);
+
+      addStep(
+        node,
+        'sin',
+        'synthesized',
+        sinVal,
+        "B' -> or T B'1",
+        "B'.sin = B'1.sin",
+        `B'.sin = B'1.sin = ${sinVal}`,
+        [`${bp1Node.id}.sin`]
+      );
+    } else if (node.children.length === 1 && node.children[0].sym === 'ε') {
+      const herVal = Boolean(node.attrs['her']);
+      addStep(
+        node,
+        'sin',
+        'synthesized',
+        herVal,
+        "B' -> ε",
+        "B'.sin = B'.her",
+        `B'.sin = B'.her = ${herVal}`,
+        [`${node.id}.her`]
+      );
+    }
+  }
+
+  function evalB(node: SddNode) {
+    const tNode = node.children[0];
+    const bpNode = node.children[1];
+    evalT(tNode);
+
+    const tVal = Boolean(tNode.attrs['val']);
+    addStep(
+      bpNode,
+      'her',
+      'inherited',
+      tVal,
+      "B -> T B'",
+      "B'.her = T.val",
+      `B'.her = ${tVal}`,
+      [`${tNode.id}.val`]
+    );
+
+    evalBp(bpNode);
+    const sinVal = Boolean(bpNode.attrs['sin']);
+
+    addStep(
+      node,
+      'val',
+      'synthesized',
+      sinVal,
+      "B -> T B'",
+      "B.val = B'.sin",
+      `B.val = B'.sin = ${sinVal}`,
+      [`${bpNode.id}.sin`]
+    );
+  }
+
+  function evalL(node: SddNode) {
+    const bNode = node.children[0];
+    evalB(bNode);
+    const bVal = Boolean(bNode.attrs['val']);
+
+    addStep(
+      node,
+      'val',
+      'synthesized',
+      bVal,
+      'L -> B',
+      'L.val = B.val',
+      `L.val = B.val = ${bVal}`,
+      [`${bNode.id}.val`]
+    );
+  }
+
+  evalL(root);
+
+  // Layout árbol
+  const minNodeWidth = 115;
+  const levelHeight = 110;
+
+  function computeSubtreeWidth(n: SddNode): number {
+    if (!n.children || n.children.length === 0) {
+      n.width = minNodeWidth;
+      return minNodeWidth;
+    }
+    const sumW = n.children.reduce((acc, c) => acc + computeSubtreeWidth(c), 0);
+    n.width = Math.max(sumW, minNodeWidth);
+    return n.width;
+  }
+  computeSubtreeWidth(root);
+
+  function layoutTree(n: SddNode, left: number, depth: number) {
+    n.y = depth * levelHeight + 60;
+    if (!n.children || n.children.length === 0) {
+      n.x = left + n.width / 2;
+      return;
+    }
+    const childrenTotalW = n.children.reduce((acc, c) => acc + c.width, 0);
+    const extra = Math.max(0, (n.width - childrenTotalW) / 2);
+    let curX = left + extra;
+    for (const c of n.children) {
+      layoutTree(c, curX, depth + 1);
+      curX += c.width;
+    }
+    n.x = (n.children[0].x + n.children[n.children.length - 1].x) / 2;
+  }
+  layoutTree(root, 40, 0);
+
+  const attributesList: SddAttributeRef[] = [];
+  const attrMap: Map<string, SddAttributeRef> = new Map();
+
+  for (const n of nodesList) {
+    for (const [attrName, val] of Object.entries(n.attrs)) {
+      let attrType: 'inherited' | 'synthesized' | 'lexical' = 'synthesized';
+      let offsetX = 0;
+      let offsetY = 0;
+
+      if (attrName === 'her') {
+        attrType = 'inherited';
+        offsetX = -40;
+        offsetY = -12;
+      } else if (attrName === 'sin') {
+        attrType = 'synthesized';
+        offsetX = 40;
+        offsetY = -12;
+      } else if (attrName === 'val') {
+        attrType = n.isTerminal ? 'lexical' : 'synthesized';
+        offsetX = n.isTerminal ? 0 : 36;
+        offsetY = n.isTerminal ? 24 : 16;
+      }
+
+      const attrRef: SddAttributeRef = {
+        nodeId: n.id,
+        nodeSym: n.sym,
+        attrName,
+        attrType,
+        value: val,
+        x: n.x + offsetX,
+        y: n.y + offsetY
+      };
+
+      attributesList.push(attrRef);
+      attrMap.set(`${n.id}.${attrName}`, attrRef);
+    }
+  }
+
+  for (const step of stepsList) {
+    const toRef = attrMap.get(`${step.targetNodeId}.${step.targetAttr}`);
+    if (!toRef) continue;
+
+    for (const depKey of step.dependencies) {
+      const fromRef = attrMap.get(depKey);
+      if (fromRef) {
+        edgesList.push({
+          id: `edge-${fromRef.nodeId}.${fromRef.attrName}->${toRef.nodeId}.${toRef.attrName}`,
+          from: fromRef,
+          to: toRef,
+          ruleDesc: step.ruleFormula,
+          edgeType: toRef.attrType === 'inherited' ? 'inherited' : 'synthesized'
+        });
+      }
+    }
+  }
+
+  let maxX = 0;
+  let maxY = 0;
+  for (const n of nodesList) {
+    if (n.x > maxX) maxX = n.x;
+    if (n.y > maxY) maxY = n.y;
+  }
+
+  return {
+    root,
+    nodesList,
+    attributesList,
+    edgesList,
+    stepsList,
+    finalResult: root.attrs['val'] ?? false,
+    svgWidth: Math.max(maxX + 120, 900),
+    svgHeight: maxY + 140,
+    grammarTitle: 'Expresiones Booleanas (OR, AND, NOT) con Eliminación de Recursividad Izquierda y DDS L-Atribuida',
+    grammarType: 'boolean',
+    expression
+  };
+}
